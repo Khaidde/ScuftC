@@ -1,0 +1,215 @@
+1/13/21 (Wednesday)
+    Done
+    - Transitioned over to C++
+    - Configured CMake and clang to generate executables
+    - Added executable "scft.exe" to the system path
+    - Read in scft files using "scft [fileName.scft]"
+
+1/14/21 (Thursday)
+    Notes
+    - More number types
+        main = () {
+            stdInteger: int = 2_147_483_647
+            stdLong: long = 9_223_372_036_854_775_807
+
+            stdFloat: float = 3.14
+            stdDouble: double = 3.1415926535
+        }
+    - Try to create a semi-colon free language (Or maybe they can be optional)
+        doStuff = (a: int) {
+            return a * a
+        }
+        doOther = (a: int) -> int {
+            val = 10 
+            return val + a
+        }
+
+        a = doStuff(3)
+        b = doOther(10)
+        Particle => type {
+            a: int ~= 10
+            b: string ~= "val"
+        }
+
+        //New line tokens don't matter in type construction
+        part = Particle.{
+            a <- 4,
+            b <- "test"
+        }
+
+        //New line tokens also don't matter for single statement if/else/while/for 
+        val: bool = true $$ true
+        if val doStuff(10) else doOther(10)
+        if val
+            doOther(20)
+        else { //The following is also valid
+            doStuff(20)
+            doStuff(40) 
+        }
+
+
+    - Blocks can act as statements
+        // running main leads to a console log of "10" and "11" with no errors
+        main = () {
+            {
+                dup = 10
+                sysout(dup)
+            }
+            dup = 11
+            sysout(dup)
+        }
+    - Remove default function parameters (function parameters are no longer declarations)
+    - Remove default intialization values for type definitions
+            Particle => type {
+                // x: mut int = 4 This line is not longer valid because default values are not allowed
+                x: int
+                y: int
+                id: mut int
+            }
+1/15/21 (Friday)
+    Notes
+    - Unsigned and signed types
+        signedInt: int = 10
+        // unsignedInt: uint = -10 //This line throws an error because uint is unsigned
+        signedLong: long = -10
+        unsignedLong: ulong = 10
+        // Note: unsigned float and double don't exist
+        // Note: arithmetic shift right is no longer necessary (automatically done base on signedness)
+    - Mutability/Immutability/Const should be a property of the "variable" not the "value/type". This will help simplify a lot of things
+        //The following could be a suitable alternative
+        ~ x : int = 10    // mut variable
+        x = 11          // this is valid because x is mutable
+
+        y: string = "initial val"
+        // y = "other val"  // This throws an error because y is defaulted to immutable
+
+        z: int => 10
+        val = z + 10 // This is valid
+        z = 22       // This is not valid
+    - References
+        Point => type { 
+            x: int 
+            y: int
+            ~randFlag : bool 
+        }
+        doStuff = (p: &Point) {
+            p.randFlag = false
+        }
+        main = () {
+            newPoint = Point.{
+                x <- 10,
+                y <- 11,    
+                randFlag <- true
+            }
+            sysout(newPoint.randFlag) //
+            doStuff(newPoint)
+        }
+    - Pass by value vs pass by reference
+        doStuffInt = (i: int) {
+            i = -1
+        }
+        doStuffPoint = (p: Point) {
+            p.x = -1
+        }
+        doStuffPointRef = (p: &Point) { //Assume that p is mutable somehow (Haven't figured this out yet) 
+            p.x = -1
+        }
+        main = () {
+            iTest = 20
+            pTest = Point.{ x <- 22 }
+
+            doStuffInt(iTest) //iTest is copied and no change is observed as expected
+            doStuffPoint(pTest) //Point is passed by value and copied so there is no change to pTest
+            doStuffPointRef(pTest) //pTest.x is now -1 because pTest is passed by reference 
+        }
+
+1/16/21 (Saturday)
+    Notes
+    - Use mut to declare mutable variables
+        val = 100
+        // val = 10 //This line is not valid cause val is immutable
+
+        mut x = 1
+        x = 10 //The following two lines are valid because x is mutable
+        x += 12
+    - Function parameter ref mutability
+        doStuff = (p: &Point) {
+            // p.x = 10 //This throws an error because p is immutable 
+        }
+        doStuffMut = (mut p: &Point) {
+            p.x = 11 //Valid code
+        }
+    - Comma in type declaration list after last declaration is optional
+        p0 = Point.{ x <- 10, y <- 20 } //This won't throw an error
+        p1 = Point.{ x <- 30, y <- 40, } //This will also no longer throw an error
+    - UTF8 support for string literals
+        coolPi = "∬x ≈ 34" //Requires change to how file is read
+    - Multiline string literals
+        list1 = 
+        "Fruit List
+        - Apples
+        - Orange
+        - Banana"
+
+        //list1 and list2 are equivalent
+        list2 = "Fruit List\n- Apples\n- Orange\n- Banana"
+    
+    Done    
+    - Worked on error handling structure and exception handling
+    - Lexer now reads everything except for multi-line comments and numeric literals
+    - Multiline string literals work
+
+1/17/21 (Sunday)
+    Notes
+    - Improved operator overloading syntax (Not finalized)
+        Particle => type {
+            x: int
+            y: int
+            operator (&self) + (other: &Particle) -> *Particle => {
+                return Particle.new{ 
+                    x <- self.x + other.x, 
+                    y <- self.y + other.y,
+                }
+            }
+        }
+        main = () {
+            p0 = Particle.{ x -= 1, y <- 2 }
+            p1 = Particle.{ x <- 3, y <- 4 }
+
+            // res and res2 are equivalent but "p0 + p1" is obviously more succinct 
+            res = p0 + p1
+            // res2 = p0 Particle.+ p1
+        }
+    - All "raw pointers" are automatically "unique pointers"
+        main = () {
+            pointer: *Particle = Particle.new{}
+            // copyOfPointer = pointer // Throws error because pointers can't be copied
+
+            stackAllocated: Particle = Particle.{}
+            copyOfStackAllocated = stackAllocated // This line is valid as expected, Creates copy of stackAllocated
+
+            pointerToStack: *Particle = stackAllocated.*
+            // copyOfPointerToStack = pointerToStack // For now, this is is invalid because pointers can't be copied
+        }
+    - Change type construction "<-" back to "="
+        // Before, Particle.{ x = 4 } insinuated that x was immutably being defined to 4
+        // However, with the new changes "mut x = 4" and "x = 4" both use the same assignment tokens
+        // It now makes sense to go back to the original syntax
+        p0 = Particle.{ x = 4, y = 3 }
+
+1/26/21 (Tuesday)
+    Notes
+    - Revised mutability syntax
+        // place mut after the variable so that variable names are all left-aligned
+        counter mut: int = 3
+        counter2 mut = 10
+        thing: int = 2
+        counter++ // this is a valid line
+        // thing = 4 // this is not a valid line
+
+        // yet another alternative syntax 
+        mutableVar |mut|: bool = true
+
+        // yet ANOTHER alternative syntax 
+        meaningOfLife ~: int = 3
+        otherMeaning ~ = 4
