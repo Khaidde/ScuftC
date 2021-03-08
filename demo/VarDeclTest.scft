@@ -1,0 +1,53 @@
+  /* val 
+   = // 18446744073709551616 // 2147483648
+   2147483648.
+   */
+   spaceMod => mod {
+   Particle => ty {
+     id: string => "testParticle"
+    x: int
+    y: int  
+   } + type
+   asdf = 3
+   Star => ty {
+     bright: bool
+   }
+   }
+     val = (false && true + 2) % 5 + 3 * 8 
+   t : int => other + (5  + 2 - true   )  
+    thing.that = 3
+    strCool: string
+    testFunc = (a: int, thing: ty {}) {
+      testThing = 123
+      return 123 
+       
+    } 
+    d = () {
+      return ty {
+        other = 3
+        a = (a: int) -> void {
+          stuff = (int) -> void {
+            print()
+            cool = 3
+          }
+        }
+      } 
+    }
+
+  // Big problem... or maybe it isn't?... probably is a problem...
+  add: (int, int) -> int => (a: int, b: int) => a + b 
+  // Alternative syntax: try add: (int, int) -> int => (a: int, b: int) <= a + b
+
+Point => ty {
+  x: int
+  y: int
+}
+
+other = module.part.x(3, 4 + 2).* + thing.*
+a = 3 + ty {  
+}  
+Point = 3 + ty { }
+
+testMod => mod {
+}
+2 = a

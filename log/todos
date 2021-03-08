@@ -1,0 +1,35 @@
+- => TODO
+x => FINISHED
+
+2/9/21
+- Thoroughly test overflow detection for integer literals: var = 101234234324341234
+- Support for direct type casting of numeric literals: 100l, 20.3f, etc
+- Precision loss detection for double 
+2/11/21
+x Fix the syntax highlighting to correctly color numbers: 3_200_400 AND 3(5) 
+- Implement type casting as a unary operator: var = (double) 3
+- Implement new operator as a unary operator: thing: *Particle = new Particle.{}
+- Consider the negation for int vs double: -(5) results in (0 - 5) and -(5.0) results in (0.0 - 5.0)
+- Debate whether or not an ASTDeref should exist for ptrVal = (val.*)
+2/17/21
+x Add ast dump and VERBOSE_AST as command line flag: scft SnakeGame.scft -dump-ast 
+x Add VERBOSE_AST to command line flags: scft CoolTestFile.scft -dump-ast -verbose 
+- Add option to specifiy what lines to dump ast: scft Test.scft -dump-ast -verbose-41-59
+2/18/21
+- Consider refactoring parseModule and parseTypeDef to call a new function parseDeclList
+x Think about new syntax for mod.{} and type.{} because it currently insinuates type instantiation
+- Consider removing trailing whitespace in error messages: 
+    3 + type {     
+    ^^^^^^^^^^^^^^
+- Optimize lexer tokenCache to only store less tokens 
+2/19/21
+x Think of a better way to deal with compiler flags and making them global
+- Add warning limit as a flag -> certain amount of warnings lead to an error: "Too many warnings"
+3/7/21
+- Deal with FuncType ambiguity:
+    // Can be interpreted as a function or a function type with a block statement on the following line
+    a = () -> bool 
+    {
+        doStuff()
+    }
+    

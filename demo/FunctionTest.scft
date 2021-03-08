@@ -1,0 +1,46 @@
+
+
+/*
+funcTest = 3 + (a: (T: type) => T, b:string, d: other(Particle)) int 
+a = 4
+*/
+Point = ty {
+    x: int
+    y: int
+}
+
+main = (argc: int) {
+    val = (a: int, b: int) :: a + b
+
+    other = () { 
+        for {
+            print()
+        }
+        if boolVal {
+            return 10 
+        } else if true {
+            if (true) {
+                bruh()
+            }
+            return  1
+        } else {
+            return 2
+        }
+    }
+
+    aOther = 3
+    aOther = 3
+}
+
+pointA = Point.{}//x = 3 } + 3
+/*
+    x = 4,
+    y: int = 7,
+}
+*/
+
+
+
+
+ 
+

@@ -1,91 +1,143 @@
 #include "lexer.hpp"
 
-#include <cmath>
-#include <deque>
 #include <fstream>
 
-CompTimeException& CompTimeException::withIndicator(int colLoc, int length, int leadingNumSpace) {
-    this->msg += std::string(LINE_NUM_LEADING_WHITESPACE + leadingNumSpace - 3, ' ');
-    this->msg += "...";
-    this->msg += std::string(LINE_NUM_TRAILING_WHITESPACE + colLoc, ' ');
-    this->msg += "^";
-    return *this;
+#include "flags.hpp"
+
+std::string tokenTypeToStr(TokenType type) {
+    switch (type) {
+        case LEFT_CURLY_TKN:
+            return "{";
+        case RIGHT_CURLY_TKN:
+            return "}";
+        case LEFT_PARENS_TKN:
+            return "(";
+        case RIGHT_PARENS_TKN:
+            return ")";
+        case MOD_TKN:
+            return "mod";
+        case TY_TKN:
+            return "ty";
+        case IF_TKN:
+            return "if";
+        case ELSE_TKN:
+            return "else";
+        case WHILE_TKN:
+            return "while";
+        case FOR_TKN:
+            return "for";
+        case IN_TKN:
+            return "in";
+        case BREAK_TKN:
+            return "break";
+        case CONTINUE_TKN:
+            return "continue";
+        case IDENTIFIER_TKN:
+            return "'identifier'";
+        case COLON_TKN:
+            return ":";
+        case VOID_TYPE_TKN:
+            return "void";
+        case MOD_TYPE_TKN:
+            return "module";
+        case TY_TYPE_TKN:
+            return "type";
+        case INT_TYPE_TKN:
+            return "int";
+        case DOUBLE_TYPE_TKN:
+            return "double";
+        case STRING_TYPE_TKN:
+            return "string";
+        case BOOL_TYPE_TKN:
+            return "bool";
+        case ASSIGNMENT_TKN:
+            return "=";
+        case CONST_ASSIGNMENT_TKN:
+            return "=>";
+        case INT_LITERAL_TKN:
+            return "'int literal'";
+        case DOUBLE_LITERAL_TKN:
+            return "'double literal'";
+        case STRING_LITERAL_TKN:
+            return "'string literal'";
+        case TRUE_TKN:
+            return "true";
+        case FALSE_TKN:
+            return "false";
+        case COND_NOT_TKN:
+            return "!";
+        case COND_OR_TKN:
+            return "||";
+        case COND_AND_TKN:
+            return "&&";
+        case COND_XOR_TKN:
+            return "$$";
+        case COND_EQUALS_TKN:
+            return "==";
+        case COND_NOT_EQUALS_TKN:
+            return "!=";
+        case COND_LESS_TKN:
+            return "<";
+        case COND_LESS_EQUAL_TKN:
+            return "<=";
+        case COND_GREATER_TKN:
+            return ">";
+        case COND_GREATER_EQUAL_TKN:
+            return ">=";
+        case BIT_NOT_TKN:
+            return "~";
+        case BIT_OR_TKN:
+            return "|";
+        case BIT_AND_TKN:
+            return "&";
+        case BIT_XOR_TKN:
+            return "$";
+        case BIT_SHIFT_LEFT_TKN:
+            return "<<";
+        case DOT_TKN:
+            return ".";
+        case OP_ADD_TKN:
+            return "+";
+        case OP_SUBTR_TKN:
+            return "-";
+        case OP_MULT_TKN:
+            return "*";
+        case OP_DIV_TKN:
+            return "/";
+        case OP_MOD_TKN:
+            return "%";
+        case OP_CARROT_TKN:
+            return "^";
+        case OP_ADD_ADD_TKN:
+            return "++";
+        case OP_ADD_EQUAL_TKN:
+            return "+=";
+        case OP_SUBTR_SUBTR_TKN:
+            return "--";
+        case OP_SUBTR_EQUAL_TKN:
+            return "-=";
+        case OP_MULT_EQUAL_TKN:
+            return "*=";
+        case OP_DIV_EQUAL_TKN:
+            return "/=";
+        case OP_MOD_EQUAL_TKN:
+            return "%=";
+        case ARROW_TKN:
+            return "->";
+        case SINGLE_RETURN_TKN:
+            return "::";
+        case RETURN_TKN:
+            return "return";
+        case COMMA_TKN:
+            return ",";
+        case DEREF_TKN:
+            return ".*";
+        case END_TKN:
+            return "end of file";
+        default:
+            return "unknown token";
+    }
 }
-
-CompTimeException& CompTimeException::at(std::string msg, int index) {
-    if (index >= lexer->sourceStr.length()) {
-        throw "Compilation error index must be less than length of source string";
-    }
-
-    struct SrcLine {
-        std::string strVal;
-        int beginCol;
-    };
-    std::deque<SrcLine> sourceLines;
-
-    int line = 1;
-    int col = 1;
-    int curI = 0;
-    while (curI <= index) {
-        std::string curStrLine;
-        int beginCol = 0;
-        char ch = lexer->sourceStr[curI];
-        while (curI < lexer->sourceStr.length() && ch != '\n') {
-            if (!beginCol && !Lexer::isWhitespace(ch)) beginCol = col;
-            if (curI < index) {
-                if (ch == '\t') {
-                    col += Lexer::TAB_WIDTH;
-                } else {
-                    col++;
-                }
-            }
-            if (ch == '\t') {
-                curStrLine += std::string(Lexer::TAB_WIDTH, ' ');
-            } else {
-                curStrLine += ch;
-            }
-            curI++;
-            ch = lexer->sourceStr[curI];
-        }
-        if (sourceLines.size() >= TOTAL_DISPLAY_LINES) sourceLines.pop_front();
-        sourceLines.push_back({curStrLine, beginCol});
-        curStrLine = "";
-        if (curI <= index) {
-            line++;
-            col = 1;
-            curI++;
-        }
-    }
-    this->msg += "(line:";
-    this->msg += std::to_string(line);
-    this->msg += ", col:";
-    this->msg += std::to_string(col);
-    this->msg += "): ";
-    this->msg += msg;
-    this->msg += "\n";
-    int sourceLinesLen = sourceLines.size();
-    int minBeginCol = sourceLines.front().beginCol;
-    for (SrcLine curLine : sourceLines) {
-        if (curLine.beginCol > 0 && curLine.beginCol < minBeginCol) minBeginCol = curLine.beginCol;
-    }
-
-    size_t lineNumStrLen = floor(log10(line + 1)) + 1;
-    int curLineNum = line - sourceLines.size();
-    for (SrcLine curLine : sourceLines) {
-        curLineNum++;
-        this->msg +=
-            std::string(LINE_NUM_LEADING_WHITESPACE + lineNumStrLen - std::to_string(curLineNum).length(), ' ');
-        this->msg += std::to_string(curLineNum);
-        this->msg += std::string(LINE_NUM_TRAILING_WHITESPACE, ' ');
-        this->msg += curLine.strVal.substr(minBeginCol - 1);
-        this->msg += "\n";
-    }
-    return this->withIndicator(col - minBeginCol, 1, lineNumStrLen);
-}
-
-CompTimeException& CompTimeException::at(std::string msg, Token* token) { return this->at(msg, token->index); }
-
-const char* CompTimeException::what() const { return msg.c_str(); }
 
 void Lexer::fromFilePath(const char* filePath) {
     std::ifstream file(filePath);
@@ -103,16 +155,35 @@ void Lexer::fromFilePath(const char* filePath) {
     }
 }
 
-std::unique_ptr<Token> Lexer::nextToken() { return consumeToken(); }
+std::unique_ptr<Token> Lexer::makeToken(TokenType type) {
+    auto tkn = std::make_unique<Token>();
+    tkn->type = type;
+    tkn->index = curIndex;
+    tkn->cLen = curCLen;
+    tkn->src = &sourceStr;
+
+    curIndex += curCLen;
+    curCLen = 0;
+    return tkn;
+}
 
 std::unique_ptr<Token> Lexer::consumeToken() {
-    // Skip over whitespace (ignore new line char \n)
+    // Skip over whitespace
     while (curIndex < sourceStr.length() && isWhitespace(sourceStr[curIndex])) curIndex++;
 
     if (curIndex >= sourceStr.length()) return makeToken(END_TKN);
 
     curCLen++;
     switch (sourceStr[curIndex]) {
+        case ';':
+            if (!flags.dwSemiColons) {
+                DX.warn()
+                    .at("Semi-colons are not required in this language", curIndex)
+                    .note("Semi-colons are treated as whitespace. Use -dw-semi-colons to disable warning");
+            }
+            curIndex++;
+            curCLen = 0;
+            return consumeToken();
         case '{':
             return makeToken(LEFT_CURLY_TKN);
         case '}':
@@ -122,13 +193,25 @@ std::unique_ptr<Token> Lexer::consumeToken() {
         case ')':
             return makeToken(RIGHT_PARENS_TKN);
         case ':':
-            return makeToken(COLON_TKN);
+            if (isCursorChar(':')) {
+                curCLen++;
+                return makeToken(SINGLE_RETURN_TKN);
+            } else {
+                return makeToken(COLON_TKN);
+            }
         case '=':
             if (isCursorChar('>')) {
                 curCLen++;
                 return makeToken(CONST_ASSIGNMENT_TKN);
             } else {
                 return makeToken(ASSIGNMENT_TKN);
+            }
+        case '!':
+            if (isCursorChar('=')) {
+                curCLen++;
+                return makeToken(COND_NOT_EQUALS_TKN);
+            } else {
+                return makeToken(COND_NOT_TKN);
             }
         case '|':
             if (isCursorChar('|')) {
@@ -151,13 +234,6 @@ std::unique_ptr<Token> Lexer::consumeToken() {
             } else {
                 return makeToken(BIT_XOR_TKN);
             }
-        case '!':
-            if (isCursorChar('=')) {
-                curCLen++;
-                return makeToken(COND_NOT_EQUALS_TKN);
-            } else {
-                return makeToken(COND_NOT_TKN);
-            }
         case '<':
             if (isCursorChar('=')) {
                 curCLen++;
@@ -179,7 +255,12 @@ std::unique_ptr<Token> Lexer::consumeToken() {
                 return makeToken(COND_GREATER_TKN);
             }
         case '.':
-            return makeToken(OP_DOT_TKN);
+            if (isCursorChar('*')) {
+                curCLen++;
+                return makeToken(DEREF_TKN);
+            } else {
+                return makeToken(DOT_TKN);
+            }
         case '+':
             if (isCursorChar('=')) {
                 curCLen++;
@@ -208,7 +289,7 @@ std::unique_ptr<Token> Lexer::consumeToken() {
                 curCLen++;
                 return makeToken(OP_MULT_EQUAL_TKN);
             } else if (isCursorChar('/')) {
-                throw ERR.at("Invalid closing of block comment", curIndex);
+                panic(DX.err().at("Invalid closing of block comment", curIndex));
             } else {
                 return makeToken(OP_MULT_TKN);
             }
@@ -230,7 +311,7 @@ std::unique_ptr<Token> Lexer::consumeToken() {
                 }
                 curCLen++;
                 if (curIndex + curCLen > sourceStr.length()) {
-                    throw ERR.at("Unterminated block comment", curIndex);
+                    panic(DX.err().at("Unterminated block comment", curIndex));
                 }
                 curIndex += curCLen;
                 curCLen = 0;
@@ -256,7 +337,7 @@ std::unique_ptr<Token> Lexer::consumeToken() {
             }
             curCLen++;
             if (curIndex + curCLen > sourceStr.length()) {
-                throw ERR.at("Unterminated string literal", curIndex);
+                panic(DX.err().at("Unterminated string literal", curIndex));
             }
             return makeToken(STRING_LITERAL_TKN);
         }
@@ -266,10 +347,10 @@ std::unique_ptr<Token> Lexer::consumeToken() {
                     curCLen++;
                 }
                 std::string_view keyword(sourceStr.c_str() + curIndex, curCLen);
-                if (keyword == "module") {
-                    return makeToken(MODULE_TKN);
-                } else if (keyword == "type") {
-                    return makeToken(TYPE_TKN);
+                if (keyword == "mod") {
+                    return makeToken(MOD_TKN);
+                } else if (keyword == "ty") {
+                    return makeToken(TY_TKN);
                 } else if (keyword == "if") {
                     return makeToken(IF_TKN);
                 } else if (keyword == "else") {
@@ -290,8 +371,14 @@ std::unique_ptr<Token> Lexer::consumeToken() {
                     return makeToken(FALSE_TKN);
                 } else if (keyword == "void") {
                     return makeToken(VOID_TYPE_TKN);
+                } else if (keyword == "module") {
+                    return makeToken(MOD_TYPE_TKN);
+                } else if (keyword == "type") {
+                    return makeToken(TY_TYPE_TKN);
                 } else if (keyword == "int") {
                     return makeToken(INT_TYPE_TKN);
+                } else if (keyword == "double") {
+                    return makeToken(DOUBLE_TYPE_TKN);
                 } else if (keyword == "string") {
                     return makeToken(STRING_TYPE_TKN);
                 } else if (keyword == "bool") {
@@ -317,21 +404,25 @@ std::unique_ptr<Token> Lexer::consumeToken() {
                 } else {
                     curCLen--;
                 }
-                long number = 0;
-                bool point = false;
-                double divideBy = 1;
+                bool overflow = false;
+                long long number = 0;
+                double divisor = 0;
                 char ch = sourceStr[curIndex + curCLen];
                 while ((base == 16 && isHex(ch)) || isNumber(ch) || ch == '.') {
                     if (ch != '_') {
                         if (ch == '.') {
-                            if (point) {
-                                throw ERR.at("Numeric literal has too many decimal points \"" +
-                                                 sourceStr.substr(curIndex, curCLen) + ".\"",
-                                             curIndex + curCLen);
+                            if (sourceStr[curIndex + curCLen - 1] == '_') {
+                                panic(DX.err().at("Underscore is not allowed here", curIndex + curCLen - 1));
+                            }
+                            if (divisor > 0) {
+                                panic(DX.err().at("Numeric literal has too many decimal points \"" +
+                                                      sourceStr.substr(curIndex, curCLen) + ".\"",
+                                                  curIndex + curCLen));
                             } else {
-                                point = true;
+                                divisor = 1;
                             }
                         } else {
+                            // Convert digit into corresponding base: (in hexadecimal) A -> 10
                             int val;
                             if (toNum(ch) >= 0 && toNum(ch) < 10) {
                                 val = toNum(ch);
@@ -340,46 +431,69 @@ std::unique_ptr<Token> Lexer::consumeToken() {
                                 if (val > 15) {
                                     val -= (97 - 65);
                                 }
+                            } else {
+                                ASSERT(false, "String is not assignable to a numeric value");
                             }
+
                             if (val < base) {
                                 number = base * number + val;
-                                if (point) divideBy = divideBy * base;
+                                if (divisor > 0) {
+                                    divisor *= base;
+                                } else {
+                                    // Check for overflow
+                                    // Negative number can indicate an overflow
+                                    if ((number > INT_MAX || number < 0) && !overflow) overflow = true;
+                                }
                             } else {
-                                throw ERR.at(std::to_string(toNum(ch)) + " is an invalid digit value in base " +
-                                                 std::to_string(base),
-                                             curIndex + curCLen);
+                                panic(DX.err().at(std::to_string(toNum(ch)) + " is an invalid digit value in base " +
+                                                      std::to_string(base),
+                                                  curIndex + curCLen));
                             }
                         }
+                    } else if (divisor == 1) {
+                        panic(DX.err().at("Underscore is not allowed here", curIndex + curCLen));
                     }
                     curCLen++;
                     ch = sourceStr[curIndex + curCLen];
                 }
+                if (sourceStr[curIndex + curCLen - 1] == '_') {
+                    panic(DX.err().at("Underscore is not allowed here", curIndex + curCLen - 1));
+                }
+                if (overflow && divisor == 0) {
+                    DX.warn()
+                        .at("Numeric literal is too large to fit in an int ", curIndex, curCLen)
+                        .note("The max value for an int literal is 2^31-1 = 2_147_483_647");
+                }
 
-                if (point) {
+                if (divisor > 0) {
                     // TODO make sure there is no precision loss
-                    auto tkn = makeToken(FLOAT_LITERAL_TKN);
-                    tkn->floatPointVal = number / divideBy;
+                    auto tkn = makeToken(DOUBLE_LITERAL_TKN);
+                    tkn->doubleVal = static_cast<double>(number) / divisor;
                     return tkn;
                 } else {
-                    // TODO turn into int or long depending on size of number
                     auto tkn = makeToken(INT_LITERAL_TKN);
                     tkn->longVal = number;
                     return tkn;
                 }
-            } else {
-                return makeToken(UNKNOWN_TKN);
             }
-            return makeToken(STRING_TYPE_TKN);
+            return makeToken(UNKNOWN_TKN);
     }
 }
 
-std::unique_ptr<Token> Lexer::makeToken(TokenType type) {
-    auto tkn = std::make_unique<Token>();
-    tkn->type = type;
-    tkn->index = curIndex;
-    tkn->cLen = curCLen;
+Token* Lexer::peekToken() {
+    if (cacheIndex >= tokenCache.size()) {
+        tokenCache.push_back(consumeToken());
+    }
+    return tokenCache.at(cacheIndex).get();
+}
 
-    curIndex += curCLen;
-    curCLen = 0;
-    return tkn;
+Token* Lexer::nextToken() {
+    Token* token = peekToken();
+    cacheIndex++;
+    return token;
+}
+
+Token* Lexer::lastToken() {
+    ASSERT(cacheIndex > 0, "Can't get last token of the first token in the file.");
+    return tokenCache.at(cacheIndex - 1).get();
 }

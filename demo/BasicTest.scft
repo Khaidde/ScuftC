@@ -1,11 +1,10 @@
-    list1 = 
-
+    list1  
 
 "Fruit List
 \t- Apples
           \t- Orange\n\t- \"Banana\"\n"if asd
 	//if=>b
-    	=> 0x32.if /*
+    	=> 0x32.2.if /*
     asdf"if if*/for
     //thing
     0b101.101

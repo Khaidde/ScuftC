@@ -142,8 +142,9 @@
     - Comma in type declaration list after last declaration is optional
         p0 = Point.{ x <- 10, y <- 20 } //This won't throw an error
         p1 = Point.{ x <- 30, y <- 40, } //This will also no longer throw an error
-    - UTF8 support for string literals
+    - UTF-8 support for string literals
         coolPi = "∬x ≈ 34" //Requires change to how file is read
+        thing = "\u3030" //Not an actual unicode code point btw
     - Multiline string literals
         list1 = 
         "Fruit List
@@ -213,3 +214,137 @@
         // yet ANOTHER alternative syntax 
         meaningOfLife ~: int = 3
         otherMeaning ~ = 4
+
+2/9/21 (Tuesday)
+    Notes
+    - No type promotion for numeric types
+        // Must explictly cast numeric type to perform arithmetic on them
+        int a = 33
+        float b = 2.4
+
+        // C/C++ as well as Java does type promotion but it seems like a code smell 
+        // Note: in the long run it might be better to just implement type promotion but honestly, who knows
+        // float c = a + b // This should throw an error
+
+2/14/21 (Sunday)
+    Notes
+    - New type definition syntax
+        // Aimed to avoid ambiguity when dealing with expressions like "if randomThing == type {}"
+
+        // The idea is that you are "creating" a new type
+        // Similar syntax to type initialization: "newPoint = Point.{}
+        Point = type.{
+            x: int
+            y: int
+        }
+    - "Templated" types 
+        Container => type.(T: type, size: int) {
+            containerSize => size
+            containedItem: T
+            nextItem: *T            // Pointer syntax indicating a "pointer to object of type T"
+        }
+
+        main = () {
+            // Note that the passed in template values MUST be constant (compile-time known).
+            // In this case, int and 55 are constant values so no compiler error
+            testCont = Container.(int, 55) {}
+
+            // testCont.containedItem = "failure" // This does not work because testCont is templated with type "int"
+            testCont.containedItem = 20 // This line is valid for obvious reasons
+
+            sysout(testCont.size) // This prints out "55" as expected
+        }
+
+2/18/21 (Thursday)
+    Notes
+    - Consider generalizing [typename].{}
+        // [typename].{...} means create an instance of [typename] and 
+        // use the block as if you were calling from within the type's scope
+        point = Point.{ x = 3 y = x + 5 }
+        point2 = Point.{
+            instanceVal: int = 10
+            x = 4
+
+            if true {
+                y = 1 + instanceVal
+            } else {
+                y = 0
+            }
+        }
+
+        // This makes the type definition syntax make more sense
+        Particle => type.{
+            x: int
+            y: int
+        }
+    - Semi-colons are considered whitespace
+        // Both statements are valid
+        a: int = 4
+        b: int = 5; 
+
+        // Compiler flag to disable or enable warning output of semi-colons
+        // Semi-colons should NOT be legal by default
+    - Consider adding mod as a type literal: testMod = mod.{...}  modType: mod = typeof(testMod)
+    - New syntax for one line function shorthand
+        regular = (a: int, b: int) -> num return a + b
+        shorthand = (a: int, b: int) => a + b
+    - Consider implicit return types
+        funcTest = (a: int, b: int) return a + b  // Implicit return type of int
+
+        // This function throws an error because of return type mismatch
+        fancy = () {
+            if true {
+                return 1
+            } else {
+                return "value"
+            }
+        }
+    - Use ty and mod keyword to remove ambiguity
+        Utils = mod {
+            Point => ty {
+                x: int
+                y: int
+            }
+            Container => ty (T: type) {
+                item: T 
+                lifetime: int
+            }
+            testPoint = Point.{
+                x = 3
+                y = 5
+            }
+        }
+
+3/7/21 (Sunday)
+    - Use :: to for function shortcut
+        add = (a: int, b: int) :: a + b
+        three = () :: 3 
+    - Labeled while loops
+        //Syntax due to change
+        while(outer) true {
+            while(inner) true {
+                if doStuff() {
+                    break outer
+                } else {
+                    continue outer
+                }
+            }
+        }
+    - Infinite for loop syntax
+        mut i = 3
+        for {
+            i = i + 1
+            if i > 10 {
+                break
+            }
+        }
+    - Prefix mut to declare a mutable variable declaration
+        mut i = 3
+        i = i + 1 // This is a legal line
+        c = 4
+        // c = c + 1 // This is NOT a legal line
+
+
+
+
+
