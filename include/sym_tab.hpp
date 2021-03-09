@@ -3,6 +3,9 @@
 #include "ast.hpp"
 #include "lexer.hpp"
 
+struct ASTDecl;
+struct Token;
+
 struct TableEntry {
     TableEntry* next;
     TableEntry(TableEntry* next) : next(next) {}

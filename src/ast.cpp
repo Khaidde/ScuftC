@@ -20,14 +20,14 @@ inline std::string indent(int count) { return std::string(Lexer::TAB_WIDTH * cou
 std::string recurDump(const ASTNode& node, int indentCt, bool verbose) {
     std::string dump;
     switch (node.nodeType) {
-        case PROGRAM: {
+        case NodeType::PROGRAM: {
             auto& prgm = static_cast<const ASTProgram&>(node);
             dump += "Program\n";
             for (auto&& decl : prgm.declarations) {
                 dump += recurDump(*decl, indentCt + 1, verbose) + "\n";
             }
         } break;
-        case BLOCK: {
+        case NodeType::BLOCK: {
             auto& block = static_cast<const ASTBlock&>(node);
             dump += indentGuide(indentCt) + "Block";
             if (!block.statements.empty()) {
@@ -40,7 +40,7 @@ std::string recurDump(const ASTNode& node, int indentCt, bool verbose) {
                 dump += " {EMPTY}";
             }
         } break;
-        case IF: {
+        case NodeType::IF: {
             auto& ifStmt = static_cast<const ASTIf&>(node);
             dump += indentGuide(indentCt) + "If ";
             if (verbose) {
@@ -59,7 +59,7 @@ std::string recurDump(const ASTNode& node, int indentCt, bool verbose) {
                 dump += recurDump(*ifStmt.alt, indentCt + 2, verbose);
             }
         } break;
-        case WHILE: {
+        case NodeType::WHILE: {
             auto& whileLoop = static_cast<const ASTWhile&>(node);
             dump += indentGuide(indentCt) + "While ";
             if (verbose) {
@@ -73,7 +73,7 @@ std::string recurDump(const ASTNode& node, int indentCt, bool verbose) {
                 dump += recurDump(*whileLoop.blockStmt, indentCt + 1, verbose);
             }
         } break;
-        case FOR: {
+        case NodeType::FOR: {
             auto& forLoop = static_cast<const ASTFor&>(node);
             dump += indentGuide(indentCt) + "For\n";
             if (verbose) {
@@ -83,13 +83,13 @@ std::string recurDump(const ASTNode& node, int indentCt, bool verbose) {
                 dump += recurDump(*forLoop.blockStmt, indentCt + 1, verbose);
             }
         } break;
-        case BREAK:
+        case NodeType::BREAK:
             dump += "Break";
             break;
-        case CONT:
+        case NodeType::CONT:
             dump += "Continue";
             break;
-        case RET: {
+        case NodeType::RET: {
             auto& ret = static_cast<const ASTRet&>(node);
             dump += indentGuide(indentCt) + "Return";
             if (ret.retValue != nullptr) {
@@ -97,7 +97,7 @@ std::string recurDump(const ASTNode& node, int indentCt, bool verbose) {
                 dump += recurDump(*ret.retValue, indentCt + 1, verbose);
             }
         } break;
-        case DECL: {
+        case NodeType::DECL: {
             auto& decl = static_cast<const ASTDecl&>(node);
             dump += indentGuide(indentCt) + "Decl ";
             if (verbose) {
@@ -125,8 +125,8 @@ std::string recurDump(const ASTNode& node, int indentCt, bool verbose) {
                 } else {
                     dump += indentGuide(indentCt + 1);
                     dump += tokenTypeToStr(decl.assignType->type) + " ";
-                    if (decl.rvalue->nodeType == MOD || decl.rvalue->nodeType == TYPE_DEF ||
-                        decl.rvalue->nodeType == FUNC) {
+                    if (decl.rvalue->nodeType == NodeType::MOD || decl.rvalue->nodeType == NodeType::TYPE_DEF ||
+                        decl.rvalue->nodeType == NodeType::FUNC) {
                         dump += "\n";
                         dump += recurDump(*decl.rvalue, indentCt + 1, verbose);
                     } else {
@@ -135,11 +135,11 @@ std::string recurDump(const ASTNode& node, int indentCt, bool verbose) {
                 }
             }
         } break;
-        case TYPE_LIT: {
+        case NodeType::TYPE_LIT: {
             auto& typeLit = static_cast<const ASTTypeLit&>(node);
             dump += indentGuide(indentCt) + "TypeLit " + printAST(typeLit);
         } break;
-        case FUNC_TYPE: {
+        case NodeType::FUNC_TYPE: {
             auto& funcType = static_cast<const ASTFuncType&>(node);
             dump += indentGuide(indentCt) + "FunctionType\n";
             if (!funcType.inTypes.empty()) {
@@ -151,7 +151,7 @@ std::string recurDump(const ASTNode& node, int indentCt, bool verbose) {
             dump += indentGuide(indentCt + 1) + "<outType>\n";
             dump += indentGuide(indentCt + 2) + printAST(*funcType.outType);
         } break;
-        case MOD: {
+        case NodeType::MOD: {
             auto& mod = static_cast<const ASTMod&>(node);
             dump += indentGuide(indentCt) + "Module";
             if (!mod.declarations.empty()) {
@@ -169,7 +169,7 @@ std::string recurDump(const ASTNode& node, int indentCt, bool verbose) {
                 dump += " {EMPTY}";
             }
         } break;
-        case TYPE_DEF: {
+        case NodeType::TYPE_DEF: {
             auto& typeDef = static_cast<const ASTTy&>(node);
             dump += indentGuide(indentCt) + "TypeDef";
             if (!typeDef.declarations.empty()) {
@@ -187,7 +187,7 @@ std::string recurDump(const ASTNode& node, int indentCt, bool verbose) {
                 dump += " {EMPTY}";
             }
         } break;
-        case FUNC: {
+        case NodeType::FUNC: {
             auto& func = static_cast<const ASTFunc&>(node);
             dump += indentGuide(indentCt) + "Function\n";
             if (!func.parameters.empty()) {
@@ -227,17 +227,17 @@ std::string recurDump(const ASTNode& node, int indentCt, bool verbose) {
             }
             dump += recurDump(*func.blockOrExpr, indentCt + 1, verbose);
         } break;
-        case NAME: {
+        case NodeType::NAME: {
             auto& name = static_cast<const ASTName&>(node);
             dump += indentGuide(indentCt) + "Name " + printAST(name);
         } break;
-        case DOT_OP: {
+        case NodeType::DOT_OP: {
             auto& dotOp = static_cast<const ASTDotOp&>(node);
             dump += indentGuide(indentCt) + "DotOp\n";
             dump += indentGuide(indentCt + 1) + "<base>\n" + recurDump(*dotOp.base, indentCt + 2, verbose) + "\n";
             dump += indentGuide(indentCt + 1) + "<member>\n" + recurDump(*dotOp.member, indentCt + 2, verbose);
         } break;
-        case CALL: {
+        case NodeType::CALL: {
             auto& call = static_cast<const ASTCall&>(node);
             dump += indentGuide(indentCt) + "Call\n";
             dump += indentGuide(indentCt + 1);
@@ -251,7 +251,7 @@ std::string recurDump(const ASTNode& node, int indentCt, bool verbose) {
                 dump = dump.substr(0, dump.length() - 1);
             }
         } break;
-        case TYPE_INIT: {
+        case NodeType::TYPE_INIT: {
             auto& typeInit = static_cast<const ASTTypeInit&>(node);
             dump += indentGuide(indentCt) + "TypeInit\n";
             dump += indentGuide(indentCt + 1) + "<typeRef>\n" + recurDump(*typeInit.typeRef, indentCt + 2, verbose);
@@ -267,22 +267,22 @@ std::string recurDump(const ASTNode& node, int indentCt, bool verbose) {
                 dump = dump.substr(0, dump.length() - 1);
             }
         } break;
-        case LIT: {
+        case NodeType::LIT: {
             auto& lit = static_cast<const ASTLit&>(node);
             dump += indentGuide(indentCt) + "Lit " + printAST(lit);
         } break;
-        case UN_OP: {
+        case NodeType::UN_OP: {
             auto& unOp = static_cast<const ASTUnOp&>(node);
             dump += indentGuide(indentCt) + "UnOp\n";
             dump += indentGuide(indentCt + 1) + "<op> " + tokenTypeToStr(unOp.op->type) + "\n";
             dump += indentGuide(indentCt + 1) + "<inner>\n" + recurDump(*unOp.inner, indentCt + 2, verbose);
         } break;
-        case DEREF: {
+        case NodeType::DEREF: {
             auto& deref = static_cast<const ASTDeref&>(node);
             dump += indentGuide(indentCt) + "Deref\n";
             dump += indentGuide(indentCt + 1) + "<inner>\n" + recurDump(*deref.inner, indentCt + 2, verbose);
         } break;
-        case BIN_OP: {
+        case NodeType::BIN_OP: {
             auto& binOp = static_cast<const ASTBinOp&>(node);
             dump += indentGuide(indentCt) + "BinOp\n";
             dump += indentGuide(indentCt + 1) + "<left>\n" + recurDump(*binOp.left, indentCt + 2, verbose) + "\n";
@@ -290,7 +290,7 @@ std::string recurDump(const ASTNode& node, int indentCt, bool verbose) {
             dump += indentGuide(indentCt + 1) + "<right>\n" + recurDump(*binOp.right, indentCt + 2, verbose);
         } break;
         default:
-            ASSERT(false, "Unimplemented AST dump for node: " + std::to_string(node.nodeType));
+            ASSERT(false, "TODO DELETE: Unimplemented AST dump for node");
     }
     return dump;
 }
@@ -298,11 +298,11 @@ std::string recurDump(const ASTNode& node, int indentCt, bool verbose) {
 std::string recurPrintExpr(const ASTExpression& expr) {
     std::string str;
     switch (expr.nodeType) {
-        case TYPE_LIT: {
+        case NodeType::TYPE_LIT: {
             auto& typeLit = static_cast<const ASTTypeLit&>(expr);
             return tokenTypeToStr(typeLit.type);
         }
-        case FUNC_TYPE: {
+        case NodeType::FUNC_TYPE: {
             auto& funcType = static_cast<const ASTFuncType&>(expr);
             str += "(";
             for (int i = 0; i < funcType.inTypes.size(); i++) {
@@ -313,7 +313,7 @@ std::string recurPrintExpr(const ASTExpression& expr) {
             }
             str += ") -> " + recurPrintExpr(*funcType.outType);
         } break;
-        case MOD: {
+        case NodeType::MOD: {
             auto& mod = static_cast<const ASTTy&>(expr);
 
             std::string declListStr;
@@ -331,7 +331,7 @@ std::string recurPrintExpr(const ASTExpression& expr) {
             }
             return "mod {" + declListStr + "}";
         } break;
-        case TYPE_DEF: {
+        case NodeType::TYPE_DEF: {
             auto& typeDef = static_cast<const ASTTy&>(expr);
             std::string declListStr;
             for (int i = 0; i < typeDef.declarations.size(); i++) {
@@ -348,7 +348,7 @@ std::string recurPrintExpr(const ASTExpression& expr) {
             }
             return "ty {" + declListStr + "}";
         } break;
-        case FUNC: {
+        case NodeType::FUNC: {
             auto& func = static_cast<const ASTFunc&>(expr);
             std::string paramListStr;
             for (int i = 0; i < func.parameters.size(); i++) {
@@ -364,14 +364,14 @@ std::string recurPrintExpr(const ASTExpression& expr) {
                 return "(" + paramListStr + ") {...}";
             }
         }
-        case NAME: {
+        case NodeType::NAME: {
             return static_cast<const ASTName&>(expr).ref->toStr();
         }
-        case DOT_OP: {
+        case NodeType::DOT_OP: {
             auto& dotOp = static_cast<const ASTDotOp&>(expr);
             return "(" + recurPrintExpr(*dotOp.base) + "." + recurPrintExpr(*dotOp.member) + ")";
         }
-        case CALL: {
+        case NodeType::CALL: {
             auto& call = static_cast<const ASTCall&>(expr);
             std::string argStr;
             str = recurPrintExpr(*call.callRef) + "(";
@@ -383,7 +383,7 @@ std::string recurPrintExpr(const ASTExpression& expr) {
             }
             str += ")";
         } break;
-        case TYPE_INIT: {
+        case NodeType::TYPE_INIT: {
             auto& typeInit = static_cast<const ASTTypeInit&>(expr);
             str = recurPrintExpr(*typeInit.typeRef) + ".{";
             for (int i = 0; i < typeInit.assignments.size(); i++) {
@@ -396,38 +396,38 @@ std::string recurPrintExpr(const ASTExpression& expr) {
             }
             str += "}";
         } break;
-        case LIT: {
+        case NodeType::LIT: {
             auto& lit = static_cast<const ASTLit&>(expr);
             switch (lit.value->type) {
-                case INT_LITERAL_TKN:
+                case TokenType::INT_LITERAL:
                     return std::to_string(lit.value->longVal);
-                case DOUBLE_LITERAL_TKN:
+                case TokenType::DOUBLE_LITERAL:
                     return std::to_string(lit.value->doubleVal);
-                case STRING_LITERAL_TKN:
+                case TokenType::STRING_LITERAL:
                     return lit.value->toStr();
-                case TRUE_TKN:
+                case TokenType::TRUE:
                     return "true";
-                case FALSE_TKN:
+                case TokenType::FALSE:
                     return "false";
                 default:
-                    ASSERT(false, "Not a literal: " + std::to_string(lit.value->type));
+                    ASSERT(false, "Not a literal: " + tokenTypeToStr(lit.value->type));
             }
         }
-        case UN_OP: {
+        case NodeType::UN_OP: {
             auto& unOp = static_cast<const ASTUnOp&>(expr);
             return tokenTypeToStr(unOp.op->type) + "(" + recurPrintExpr(*unOp.inner) + ")";
         }
-        case DEREF: {
+        case NodeType::DEREF: {
             auto& deref = static_cast<const ASTDeref&>(expr);
             return "(" + recurPrintExpr(*deref.inner) + ").*";
         }
-        case BIN_OP: {
+        case NodeType::BIN_OP: {
             auto& binOp = static_cast<const ASTBinOp&>(expr);
             return "(" + printExpr(*binOp.left) + " " + tokenTypeToStr(binOp.op->type) + " " + printExpr(*binOp.right) +
                    ")";
         }
         default:
-            ASSERT(false, "Node is not an expression: " + std::to_string(expr.nodeType));
+            ASSERT(false, "Node is not an expression");
     }
     return str;
 }
@@ -435,13 +435,13 @@ std::string recurPrintExpr(const ASTExpression& expr) {
 std::string recurPrintAST(const ASTNode& node, int indentCt) {
     std::string str;
     switch (node.nodeType) {
-        case PROGRAM: {
+        case NodeType::PROGRAM: {
             auto& prgm = static_cast<const ASTProgram&>(node);
             for (auto&& decl : prgm.declarations) {
                 str += recurPrintAST(*decl, indentCt) + "\n";
             }
         } break;
-        case BLOCK: {
+        case NodeType::BLOCK: {
             auto& block = static_cast<const ASTBlock&>(node);
             str += "{\n";
             for (auto& stmt : block.statements) {
@@ -450,7 +450,7 @@ std::string recurPrintAST(const ASTNode& node, int indentCt) {
             }
             str += indent(indentCt) + "}";
         } break;
-        case IF: {
+        case NodeType::IF: {
             auto& ifStmt = static_cast<const ASTIf&>(node);
             str += "if " + recurPrintAST(*ifStmt.condition, indentCt) + " ";
             str += recurPrintAST(*ifStmt.conseq, indentCt);
@@ -459,17 +459,17 @@ std::string recurPrintAST(const ASTNode& node, int indentCt) {
                 str += recurPrintAST(*ifStmt.alt, indentCt);
             }
         } break;
-        case WHILE: {
+        case NodeType::WHILE: {
             auto& whileLoop = static_cast<const ASTWhile&>(node);
             str += "while " + recurPrintAST(*whileLoop.condition, indentCt) + " ";
             str += recurPrintAST(*whileLoop.blockStmt, indentCt);
         } break;
-        case FOR: {
+        case NodeType::FOR: {
             auto& forLoop = static_cast<const ASTFor&>(node);
             str += "for ";
             str += recurPrintAST(*forLoop.blockStmt, indentCt);
         } break;
-        case RET: {
+        case NodeType::RET: {
             auto& ret = static_cast<const ASTRet&>(node);
             if (ret.retValue == nullptr) {
                 return "return";
@@ -477,7 +477,7 @@ std::string recurPrintAST(const ASTNode& node, int indentCt) {
                 return "return " + recurPrintAST(*ret.retValue, indentCt);
             }
         }
-        case DECL: {
+        case NodeType::DECL: {
             auto& decl = static_cast<const ASTDecl&>(node);
             str += recurPrintAST(*decl.lvalue, indentCt);
             if (decl.type != nullptr) {
@@ -490,7 +490,7 @@ std::string recurPrintAST(const ASTNode& node, int indentCt) {
                 str += recurPrintAST(*decl.rvalue, indentCt);
             }
         } break;
-        case MOD: {
+        case NodeType::MOD: {
             auto& mod = static_cast<const ASTMod&>(node);
             str += "mod {\n";
             for (auto&& decl : mod.declarations) {
@@ -499,7 +499,7 @@ std::string recurPrintAST(const ASTNode& node, int indentCt) {
             }
             str += indent(indentCt) + "}";
         } break;
-        case TYPE_DEF: {
+        case NodeType::TYPE_DEF: {
             auto& typeDef = static_cast<const ASTTy&>(node);
             str += "ty {\n";
             for (auto&& decl : typeDef.declarations) {
@@ -508,7 +508,7 @@ std::string recurPrintAST(const ASTNode& node, int indentCt) {
             }
             str += indent(indentCt) + "}";
         } break;
-        case FUNC: {
+        case NodeType::FUNC: {
             auto& func = static_cast<const ASTFunc&>(node);
             str = "(";
             for (int i = 0; i < func.parameters.size(); i++) {

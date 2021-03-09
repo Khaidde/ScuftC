@@ -4,11 +4,14 @@
 #include <vector>
 
 #include "lexer.hpp"
+#include "sym_tab.hpp"
 
-enum TokenType : unsigned char;
+enum class TokenType : unsigned char;
 struct Token;
 
-enum NodeType {
+struct SymTable;
+
+enum class NodeType {
     PROGRAM,
     BLOCK,
 
@@ -40,30 +43,8 @@ enum NodeType {
     BIN_OP
 };
 
-struct ASTNode {
-    const NodeType nodeType;
-    int locIndex;
-    int endIndex;
-    explicit ASTNode(NodeType nodeType) : nodeType(nodeType) {}
-};
-
-struct ASTExpression : ASTNode {
-    explicit ASTExpression(NodeType nodeType) : ASTNode(nodeType) {}
-};
-
-template <class T>
-std::unique_ptr<T> makeNode(int index) {
-    auto node = std::make_unique<T>();
-    node->locIndex = index;
-    node->endIndex = index + 1;
-    return node;
-}
-
-template <class T1, class T2>
-inline std::unique_ptr<T1> castNodePtr(std::unique_ptr<T2>& nodePtr) {
-    return std::unique_ptr<T1>(static_cast<T1*>(nodePtr.release()));
-}
-
+struct ASTNode;
+struct ASTExpression;
 struct ASTProgram;
 struct ASTBlock;
 struct ASTIF;
@@ -87,46 +68,71 @@ struct ASTUnOp;
 struct ASTDeref;
 struct ASTBinOp;
 
+template <class T>
+std::unique_ptr<T> makeNode(int index) {
+    auto node = std::make_unique<T>();
+    node->locIndex = index;
+    node->endIndex = index + 1;
+    return node;
+}
+
+template <class T1, class T2>
+inline std::unique_ptr<T1> castNodePtr(std::unique_ptr<T2>& nodePtr) {
+    return std::unique_ptr<T1>(static_cast<T1*>(nodePtr.release()));
+}
+
+struct ASTNode {
+    const NodeType nodeType;
+    int locIndex;
+    int endIndex;
+    explicit ASTNode(NodeType nodeType) : nodeType(nodeType) {}
+};
+
+struct ASTExpression : ASTNode {
+    explicit ASTExpression(NodeType nodeType) : ASTNode(nodeType) {}
+};
+
 struct ASTProgram : ASTNode {
     std::vector<std::unique_ptr<ASTDecl>> declarations;
-    ASTProgram() : ASTNode(PROGRAM) {}
+    ASTProgram() : ASTNode(NodeType::PROGRAM) {}
 };
 
 struct ASTBlock : ASTNode {
+    std::unique_ptr<SymTable> symbolTable;
     std::vector<std::unique_ptr<ASTNode>> statements;  // A statement can be anything excluding ASTProgram
-    ASTBlock() : ASTNode(BLOCK) {}
+    ASTBlock() : ASTNode(NodeType::BLOCK) {}
 };
 
 struct ASTIf : ASTNode {
     std::unique_ptr<ASTExpression> condition;
     std::unique_ptr<ASTNode> conseq;  // Consequence
     std::unique_ptr<ASTNode> alt;     // Alternative can be either an if statement or else block
-    ASTIf() : ASTNode(IF) {}
+    ASTIf() : ASTNode(NodeType::IF) {}
 };
 
 struct ASTWhile : ASTNode {
     std::unique_ptr<ASTExpression> condition;
     std::unique_ptr<ASTNode> blockStmt;
-    ASTWhile() : ASTNode(WHILE) {}
+    ASTWhile() : ASTNode(NodeType::WHILE) {}
 };
 
 struct ASTFor : ASTNode {
     // TODO for loop needs to be more concretely defined
     std::unique_ptr<ASTNode> blockStmt;
-    ASTFor() : ASTNode(FOR) {}
+    ASTFor() : ASTNode(NodeType::FOR) {}
 };
 
 struct ASTBreak : ASTNode {
-    ASTBreak() : ASTNode(BREAK) {}
+    ASTBreak() : ASTNode(NodeType::BREAK) {}
 };
 
 struct ASTCont : ASTNode {
-    ASTCont() : ASTNode(CONT) {}
+    ASTCont() : ASTNode(NodeType::CONT) {}
 };
 
 struct ASTRet : ASTNode {
     std::unique_ptr<ASTExpression> retValue;
-    ASTRet() : ASTNode(RET) {}
+    ASTRet() : ASTNode(NodeType::RET) {}
 };
 
 struct ASTDecl : ASTNode {
@@ -135,28 +141,28 @@ struct ASTDecl : ASTNode {
 
     Token* assignType;
     std::unique_ptr<ASTExpression> rvalue;
-    ASTDecl() : ASTNode(DECL) {}
+    ASTDecl() : ASTNode(NodeType::DECL) {}
 };
 
 struct ASTTypeLit : ASTExpression {
     TokenType type;
-    ASTTypeLit() : ASTExpression(TYPE_LIT) {}
+    ASTTypeLit() : ASTExpression(NodeType::TYPE_LIT) {}
 };
 
 struct ASTFuncType : ASTExpression {
     std::vector<std::unique_ptr<ASTExpression>> inTypes;
     std::unique_ptr<ASTExpression> outType;
-    ASTFuncType() : ASTExpression(FUNC_TYPE) {}
+    ASTFuncType() : ASTExpression(NodeType::FUNC_TYPE) {}
 };
 
 struct ASTMod : ASTExpression {
     std::vector<std::unique_ptr<ASTDecl>> declarations;
-    ASTMod() : ASTExpression(MOD) {}
+    ASTMod() : ASTExpression(NodeType::MOD) {}
 };
 
 struct ASTTy : ASTExpression {
     std::vector<std::unique_ptr<ASTDecl>> declarations;
-    ASTTy() : ASTExpression(TYPE_DEF) {}
+    ASTTy() : ASTExpression(NodeType::TYPE_DEF) {}
 };
 
 struct FuncParam {
@@ -168,53 +174,53 @@ struct ASTFunc : ASTExpression {
     std::vector<std::unique_ptr<FuncParam>> parameters;
     std::unique_ptr<ASTExpression> returnType;
     std::unique_ptr<ASTNode> blockOrExpr;
-    ASTFunc() : ASTExpression(FUNC) {}
+    ASTFunc() : ASTExpression(NodeType::FUNC) {}
 };
 
 struct ASTName : ASTExpression {
     Token* ref;
-    ASTName() : ASTExpression(NAME) {}
+    ASTName() : ASTExpression(NodeType::NAME) {}
 };
 
 struct ASTDotOp : ASTExpression {
     std::unique_ptr<ASTExpression> base;
     std::unique_ptr<ASTName> member;
-    ASTDotOp() : ASTExpression(DOT_OP) {}
+    ASTDotOp() : ASTExpression(NodeType::DOT_OP) {}
 };
 
 struct ASTCall : ASTExpression {
     std::unique_ptr<ASTExpression> callRef;
     std::vector<std::unique_ptr<ASTExpression>> arguments;
-    ASTCall() : ASTExpression(CALL) {}
+    ASTCall() : ASTExpression(NodeType::CALL) {}
 };
 
 struct ASTTypeInit : ASTExpression {
     std::unique_ptr<ASTExpression> typeRef;
     std::vector<std::unique_ptr<ASTDecl>> assignments;
-    ASTTypeInit() : ASTExpression(TYPE_INIT) {}
+    ASTTypeInit() : ASTExpression(NodeType::TYPE_INIT) {}
 };
 
 struct ASTLit : ASTExpression {
     Token* value;
-    ASTLit() : ASTExpression(LIT) {}
+    ASTLit() : ASTExpression(NodeType::LIT) {}
 };
 
 struct ASTUnOp : ASTExpression {
     Token* op;
     std::unique_ptr<ASTExpression> inner;
-    ASTUnOp() : ASTExpression(UN_OP) {}
+    ASTUnOp() : ASTExpression(NodeType::UN_OP) {}
 };
 
 struct ASTDeref : ASTExpression {
     std::unique_ptr<ASTExpression> inner;
-    ASTDeref() : ASTExpression(DEREF) {}
+    ASTDeref() : ASTExpression(NodeType::DEREF) {}
 };
 
 struct ASTBinOp : ASTExpression {
     std::unique_ptr<ASTExpression> left;
     Token* op;
     std::unique_ptr<ASTExpression> right;
-    ASTBinOp() : ASTExpression(BIN_OP) {}
+    ASTBinOp() : ASTExpression(NodeType::BIN_OP) {}
 };
 
 void dumpAST(const ASTNode& node, bool verbose);

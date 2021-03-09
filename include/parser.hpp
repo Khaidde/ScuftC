@@ -6,7 +6,7 @@
 #include "sym_tab.hpp"
 
 class Parser {
-    SymTable globalScopeTest;
+    SymTable globalTable;
     Lexer lexer;
 
     enum { LOWEST_PRECEDENCE = 0, HIGHEST_PRECEDENCE = 100 };

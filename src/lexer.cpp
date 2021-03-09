@@ -6,133 +6,133 @@
 
 std::string tokenTypeToStr(TokenType type) {
     switch (type) {
-        case LEFT_CURLY_TKN:
+        case TokenType::LEFT_CURLY:
             return "{";
-        case RIGHT_CURLY_TKN:
+        case TokenType::RIGHT_CURLY:
             return "}";
-        case LEFT_PARENS_TKN:
+        case TokenType::LEFT_PARENS:
             return "(";
-        case RIGHT_PARENS_TKN:
+        case TokenType::RIGHT_PARENS:
             return ")";
-        case MOD_TKN:
+        case TokenType::MOD:
             return "mod";
-        case TY_TKN:
+        case TokenType::TY:
             return "ty";
-        case IF_TKN:
+        case TokenType::IF:
             return "if";
-        case ELSE_TKN:
+        case TokenType::ELSE:
             return "else";
-        case WHILE_TKN:
+        case TokenType::WHILE:
             return "while";
-        case FOR_TKN:
+        case TokenType::FOR:
             return "for";
-        case IN_TKN:
+        case TokenType::IN:
             return "in";
-        case BREAK_TKN:
+        case TokenType::BREAK:
             return "break";
-        case CONTINUE_TKN:
+        case TokenType::CONTINUE:
             return "continue";
-        case IDENTIFIER_TKN:
+        case TokenType::IDENTIFIER:
             return "'identifier'";
-        case COLON_TKN:
+        case TokenType::COLON:
             return ":";
-        case VOID_TYPE_TKN:
+        case TokenType::VOID_TYPE:
             return "void";
-        case MOD_TYPE_TKN:
+        case TokenType::MOD_TYPE:
             return "module";
-        case TY_TYPE_TKN:
+        case TokenType::TY_TYPE:
             return "type";
-        case INT_TYPE_TKN:
+        case TokenType::INT_TYPE:
             return "int";
-        case DOUBLE_TYPE_TKN:
+        case TokenType::DOUBLE_TYPE:
             return "double";
-        case STRING_TYPE_TKN:
+        case TokenType::STRING_TYPE:
             return "string";
-        case BOOL_TYPE_TKN:
+        case TokenType::BOOL_TYPE:
             return "bool";
-        case ASSIGNMENT_TKN:
+        case TokenType::ASSIGNMENT:
             return "=";
-        case CONST_ASSIGNMENT_TKN:
+        case TokenType::CONST_ASSIGNMENT:
             return "=>";
-        case INT_LITERAL_TKN:
+        case TokenType::INT_LITERAL:
             return "'int literal'";
-        case DOUBLE_LITERAL_TKN:
+        case TokenType::DOUBLE_LITERAL:
             return "'double literal'";
-        case STRING_LITERAL_TKN:
+        case TokenType::STRING_LITERAL:
             return "'string literal'";
-        case TRUE_TKN:
+        case TokenType::TRUE:
             return "true";
-        case FALSE_TKN:
+        case TokenType::FALSE:
             return "false";
-        case COND_NOT_TKN:
+        case TokenType::COND_NOT:
             return "!";
-        case COND_OR_TKN:
+        case TokenType::COND_OR:
             return "||";
-        case COND_AND_TKN:
+        case TokenType::COND_AND:
             return "&&";
-        case COND_XOR_TKN:
+        case TokenType::COND_XOR:
             return "$$";
-        case COND_EQUALS_TKN:
+        case TokenType::COND_EQUALS:
             return "==";
-        case COND_NOT_EQUALS_TKN:
+        case TokenType::COND_NOT_EQUALS:
             return "!=";
-        case COND_LESS_TKN:
+        case TokenType::COND_LESS:
             return "<";
-        case COND_LESS_EQUAL_TKN:
+        case TokenType::COND_LESS_EQUAL:
             return "<=";
-        case COND_GREATER_TKN:
+        case TokenType::COND_GREATER:
             return ">";
-        case COND_GREATER_EQUAL_TKN:
+        case TokenType::COND_GREATER_EQUAL:
             return ">=";
-        case BIT_NOT_TKN:
+        case TokenType::BIT_NOT:
             return "~";
-        case BIT_OR_TKN:
+        case TokenType::BIT_OR:
             return "|";
-        case BIT_AND_TKN:
+        case TokenType::BIT_AND:
             return "&";
-        case BIT_XOR_TKN:
+        case TokenType::BIT_XOR:
             return "$";
-        case BIT_SHIFT_LEFT_TKN:
+        case TokenType::BIT_SHIFT_LEFT:
             return "<<";
-        case DOT_TKN:
+        case TokenType::DOT:
             return ".";
-        case OP_ADD_TKN:
+        case TokenType::OP_ADD:
             return "+";
-        case OP_SUBTR_TKN:
+        case TokenType::OP_SUBTR:
             return "-";
-        case OP_MULT_TKN:
+        case TokenType::OP_MULT:
             return "*";
-        case OP_DIV_TKN:
+        case TokenType::OP_DIV:
             return "/";
-        case OP_MOD_TKN:
+        case TokenType::OP_MOD:
             return "%";
-        case OP_CARROT_TKN:
+        case TokenType::OP_CARROT:
             return "^";
-        case OP_ADD_ADD_TKN:
+        case TokenType::OP_ADD_ADD:
             return "++";
-        case OP_ADD_EQUAL_TKN:
+        case TokenType::OP_ADD_EQUAL:
             return "+=";
-        case OP_SUBTR_SUBTR_TKN:
+        case TokenType::OP_SUBTR_SUBTR:
             return "--";
-        case OP_SUBTR_EQUAL_TKN:
+        case TokenType::OP_SUBTR_EQUAL:
             return "-=";
-        case OP_MULT_EQUAL_TKN:
+        case TokenType::OP_MULT_EQUAL:
             return "*=";
-        case OP_DIV_EQUAL_TKN:
+        case TokenType::OP_DIV_EQUAL:
             return "/=";
-        case OP_MOD_EQUAL_TKN:
+        case TokenType::OP_MOD_EQUAL:
             return "%=";
-        case ARROW_TKN:
+        case TokenType::ARROW:
             return "->";
-        case SINGLE_RETURN_TKN:
+        case TokenType::SINGLE_RETURN:
             return "::";
-        case RETURN_TKN:
+        case TokenType::RETURN:
             return "return";
-        case COMMA_TKN:
+        case TokenType::COMMA:
             return ",";
-        case DEREF_TKN:
+        case TokenType::DEREF:
             return ".*";
-        case END_TKN:
+        case TokenType::END:
             return "end of file";
         default:
             return "unknown token";
@@ -171,7 +171,7 @@ std::unique_ptr<Token> Lexer::consumeToken() {
     // Skip over whitespace
     while (curIndex < sourceStr.length() && isWhitespace(sourceStr[curIndex])) curIndex++;
 
-    if (curIndex >= sourceStr.length()) return makeToken(END_TKN);
+    if (curIndex >= sourceStr.length()) return makeToken(TokenType::END);
 
     curCLen++;
     switch (sourceStr[curIndex]) {
@@ -185,118 +185,118 @@ std::unique_ptr<Token> Lexer::consumeToken() {
             curCLen = 0;
             return consumeToken();
         case '{':
-            return makeToken(LEFT_CURLY_TKN);
+            return makeToken(TokenType::LEFT_CURLY);
         case '}':
-            return makeToken(RIGHT_CURLY_TKN);
+            return makeToken(TokenType::RIGHT_CURLY);
         case '(':
-            return makeToken(LEFT_PARENS_TKN);
+            return makeToken(TokenType::LEFT_PARENS);
         case ')':
-            return makeToken(RIGHT_PARENS_TKN);
+            return makeToken(TokenType::RIGHT_PARENS);
         case ':':
             if (isCursorChar(':')) {
                 curCLen++;
-                return makeToken(SINGLE_RETURN_TKN);
+                return makeToken(TokenType::SINGLE_RETURN);
             } else {
-                return makeToken(COLON_TKN);
+                return makeToken(TokenType::COLON);
             }
         case '=':
             if (isCursorChar('>')) {
                 curCLen++;
-                return makeToken(CONST_ASSIGNMENT_TKN);
+                return makeToken(TokenType::CONST_ASSIGNMENT);
             } else {
-                return makeToken(ASSIGNMENT_TKN);
+                return makeToken(TokenType::ASSIGNMENT);
             }
         case '!':
             if (isCursorChar('=')) {
                 curCLen++;
-                return makeToken(COND_NOT_EQUALS_TKN);
+                return makeToken(TokenType::COND_NOT_EQUALS);
             } else {
-                return makeToken(COND_NOT_TKN);
+                return makeToken(TokenType::COND_NOT);
             }
         case '|':
             if (isCursorChar('|')) {
                 curCLen++;
-                return makeToken(COND_OR_TKN);
+                return makeToken(TokenType::COND_OR);
             } else {
-                return makeToken(BIT_OR_TKN);
+                return makeToken(TokenType::BIT_OR);
             }
         case '&':
             if (isCursorChar('&')) {
                 curCLen++;
-                return makeToken(COND_AND_TKN);
+                return makeToken(TokenType::COND_AND);
             } else {
-                return makeToken(BIT_AND_TKN);
+                return makeToken(TokenType::BIT_AND);
             }
         case '$':
             if (isCursorChar('$')) {
                 curCLen++;
-                return makeToken(COND_XOR_TKN);
+                return makeToken(TokenType::COND_XOR);
             } else {
-                return makeToken(BIT_XOR_TKN);
+                return makeToken(TokenType::BIT_XOR);
             }
         case '<':
             if (isCursorChar('=')) {
                 curCLen++;
-                return makeToken(COND_LESS_EQUAL_TKN);
+                return makeToken(TokenType::COND_LESS_EQUAL);
             } else if (isCursorChar('<')) {
                 curCLen++;
-                return makeToken(BIT_SHIFT_LEFT_TKN);
+                return makeToken(TokenType::BIT_SHIFT_LEFT);
             } else {
-                return makeToken(COND_LESS_TKN);
+                return makeToken(TokenType::COND_LESS);
             }
         case '>':
             if (isCursorChar('=')) {
                 curCLen++;
-                return makeToken(COND_GREATER_EQUAL_TKN);
+                return makeToken(TokenType::COND_GREATER_EQUAL);
             } else if (isCursorChar('>')) {
                 curCLen++;
-                return makeToken(BIT_SHIFT_RIGHT_TKN);
+                return makeToken(TokenType::BIT_SHIFT_RIGHT);
             } else {
-                return makeToken(COND_GREATER_TKN);
+                return makeToken(TokenType::COND_GREATER);
             }
         case '.':
             if (isCursorChar('*')) {
                 curCLen++;
-                return makeToken(DEREF_TKN);
+                return makeToken(TokenType::DEREF);
             } else {
-                return makeToken(DOT_TKN);
+                return makeToken(TokenType::DOT);
             }
         case '+':
             if (isCursorChar('=')) {
                 curCLen++;
-                return makeToken(OP_ADD_EQUAL_TKN);
+                return makeToken(TokenType::OP_ADD_EQUAL);
             } else if (isCursorChar('+')) {
                 curCLen++;
-                return makeToken(OP_ADD_ADD_TKN);
+                return makeToken(TokenType::OP_ADD_ADD);
             } else {
-                return makeToken(OP_ADD_TKN);
+                return makeToken(TokenType::OP_ADD);
             }
         case '-':
             if (isCursorChar('=')) {
                 curCLen++;
-                return makeToken(OP_SUBTR_EQUAL_TKN);
+                return makeToken(TokenType::OP_SUBTR_EQUAL);
             } else if (isCursorChar('-')) {
                 curCLen++;
-                return makeToken(OP_SUBTR_SUBTR_TKN);
+                return makeToken(TokenType::OP_SUBTR_SUBTR);
             } else if (isCursorChar('>')) {
                 curCLen++;
-                return makeToken(ARROW_TKN);
+                return makeToken(TokenType::ARROW);
             } else {
-                return makeToken(OP_SUBTR_TKN);
+                return makeToken(TokenType::OP_SUBTR);
             }
         case '*':
             if (isCursorChar('*')) {
                 curCLen++;
-                return makeToken(OP_MULT_EQUAL_TKN);
+                return makeToken(TokenType::OP_MULT_EQUAL);
             } else if (isCursorChar('/')) {
                 panic(DX.err().at("Invalid closing of block comment", curIndex));
             } else {
-                return makeToken(OP_MULT_TKN);
+                return makeToken(TokenType::OP_MULT);
             }
         case '/':
             if (isCursorChar('=')) {
                 curCLen++;
-                return makeToken(OP_DIV_EQUAL_TKN);
+                return makeToken(TokenType::OP_DIV_EQUAL);
             } else if (isCursorChar('/')) {
                 while (curIndex < sourceStr.length() && sourceStr[curIndex] != '\n') {
                     curIndex++;
@@ -317,19 +317,19 @@ std::unique_ptr<Token> Lexer::consumeToken() {
                 curCLen = 0;
                 return consumeToken();
             } else {
-                return makeToken(OP_DIV_TKN);
+                return makeToken(TokenType::OP_DIV);
             }
         case '%':
             if (isCursorChar('=')) {
                 curCLen++;
-                return makeToken(OP_MOD_EQUAL_TKN);
+                return makeToken(TokenType::OP_MOD_EQUAL);
             } else {
-                return makeToken(OP_MOD_TKN);
+                return makeToken(TokenType::OP_MOD);
             }
         case '^':
-            return makeToken(OP_CARROT_TKN);
+            return makeToken(TokenType::OP_CARROT);
         case ',':
-            return makeToken(COMMA_TKN);
+            return makeToken(TokenType::COMMA);
         case '"': {
             while (curIndex + curCLen < sourceStr.length() && !isCursorChar('"')) {
                 if (isCursorChar('\\')) curCLen++;
@@ -339,7 +339,7 @@ std::unique_ptr<Token> Lexer::consumeToken() {
             if (curIndex + curCLen > sourceStr.length()) {
                 panic(DX.err().at("Unterminated string literal", curIndex));
             }
-            return makeToken(STRING_LITERAL_TKN);
+            return makeToken(TokenType::STRING_LITERAL);
         }
         default:
             if (isLetter(sourceStr[curIndex])) {
@@ -348,45 +348,45 @@ std::unique_ptr<Token> Lexer::consumeToken() {
                 }
                 std::string_view keyword(sourceStr.c_str() + curIndex, curCLen);
                 if (keyword == "mod") {
-                    return makeToken(MOD_TKN);
+                    return makeToken(TokenType::MOD);
                 } else if (keyword == "ty") {
-                    return makeToken(TY_TKN);
+                    return makeToken(TokenType::TY);
                 } else if (keyword == "if") {
-                    return makeToken(IF_TKN);
+                    return makeToken(TokenType::IF);
                 } else if (keyword == "else") {
-                    return makeToken(ELSE_TKN);
+                    return makeToken(TokenType::ELSE);
                 } else if (keyword == "while") {
-                    return makeToken(WHILE_TKN);
+                    return makeToken(TokenType::WHILE);
                 } else if (keyword == "for") {
-                    return makeToken(FOR_TKN);
+                    return makeToken(TokenType::FOR);
                 } else if (keyword == "in") {
-                    return makeToken(IN_TKN);
+                    return makeToken(TokenType::IN);
                 } else if (keyword == "break") {
-                    return makeToken(BREAK_TKN);
+                    return makeToken(TokenType::BREAK);
                 } else if (keyword == "continue") {
-                    return makeToken(CONTINUE_TKN);
+                    return makeToken(TokenType::CONTINUE);
                 } else if (keyword == "true") {
-                    return makeToken(TRUE_TKN);
+                    return makeToken(TokenType::TRUE);
                 } else if (keyword == "false") {
-                    return makeToken(FALSE_TKN);
+                    return makeToken(TokenType::FALSE);
                 } else if (keyword == "void") {
-                    return makeToken(VOID_TYPE_TKN);
+                    return makeToken(TokenType::VOID_TYPE);
                 } else if (keyword == "module") {
-                    return makeToken(MOD_TYPE_TKN);
+                    return makeToken(TokenType::MOD_TYPE);
                 } else if (keyword == "type") {
-                    return makeToken(TY_TYPE_TKN);
+                    return makeToken(TokenType::TY_TYPE);
                 } else if (keyword == "int") {
-                    return makeToken(INT_TYPE_TKN);
+                    return makeToken(TokenType::INT_TYPE);
                 } else if (keyword == "double") {
-                    return makeToken(DOUBLE_TYPE_TKN);
+                    return makeToken(TokenType::DOUBLE_TYPE);
                 } else if (keyword == "string") {
-                    return makeToken(STRING_TYPE_TKN);
+                    return makeToken(TokenType::STRING_TYPE);
                 } else if (keyword == "bool") {
-                    return makeToken(BOOL_TYPE_TKN);
+                    return makeToken(TokenType::BOOL_TYPE);
                 } else if (keyword == "return") {
-                    return makeToken(RETURN_TKN);
+                    return makeToken(TokenType::RETURN);
                 } else {
-                    return makeToken(IDENTIFIER_TKN);
+                    return makeToken(TokenType::IDENTIFIER);
                 }
             } else if (isNumber(sourceStr[curIndex])) {
                 int base = 10;
@@ -467,16 +467,16 @@ std::unique_ptr<Token> Lexer::consumeToken() {
 
                 if (divisor > 0) {
                     // TODO make sure there is no precision loss
-                    auto tkn = makeToken(DOUBLE_LITERAL_TKN);
+                    auto tkn = makeToken(TokenType::DOUBLE_LITERAL);
                     tkn->doubleVal = static_cast<double>(number) / divisor;
                     return tkn;
                 } else {
-                    auto tkn = makeToken(INT_LITERAL_TKN);
+                    auto tkn = makeToken(TokenType::INT_LITERAL);
                     tkn->longVal = number;
                     return tkn;
                 }
             }
-            return makeToken(UNKNOWN_TKN);
+            return makeToken(TokenType::UNKNOWN);
     }
 }
 

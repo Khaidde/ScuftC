@@ -9,95 +9,95 @@
 #include "diagnostics.hpp"
 #include "flags.hpp"
 
-enum TokenType : unsigned char {
-    UNKNOWN_TKN,
+enum class TokenType : unsigned char {
+    UNKNOWN,
 
     // Blocks
-    LEFT_CURLY_TKN,
-    RIGHT_CURLY_TKN,
-    LEFT_PARENS_TKN,
-    RIGHT_PARENS_TKN,
+    LEFT_CURLY,
+    RIGHT_CURLY,
+    LEFT_PARENS,
+    RIGHT_PARENS,
 
     // Statement Keywords
-    MOD_TKN,  // testMod = mod {}
-    TY_TKN,   // particle = ty {}
-    IF_TKN,
-    ELSE_TKN,
-    WHILE_TKN,
-    FOR_TKN,
-    IN_TKN,
-    BREAK_TKN,
-    CONTINUE_TKN,
+    MOD,  // testMod = mod {}
+    TY,   // particle = ty {}
+    IF,
+    ELSE,
+    WHILE,
+    FOR,
+    IN,
+    BREAK,
+    CONTINUE,
 
     // Declarations
-    IDENTIFIER_TKN,
-    COLON_TKN,
+    IDENTIFIER,
+    COLON,
 
     // Types
-    VOID_TYPE_TKN,
-    MOD_TYPE_TKN,  // spaceMod: module = mod { }
-    TY_TYPE_TKN,   // thing: type = typeof( Particle )
-    INT_TYPE_TKN,
-    DOUBLE_TYPE_TKN,
-    STRING_TYPE_TKN,
-    BOOL_TYPE_TKN,
+    VOID_TYPE,
+    MOD_TYPE,  // spaceMod: module = mod { }
+    TY_TYPE,   // thing: type = typeof( Particle )
+    INT_TYPE,
+    DOUBLE_TYPE,
+    STRING_TYPE,
+    BOOL_TYPE,
 
     // Assignments
-    ASSIGNMENT_TKN,
-    CONST_ASSIGNMENT_TKN,
+    ASSIGNMENT,
+    CONST_ASSIGNMENT,
 
     // Literal values
-    INT_LITERAL_TKN,
-    DOUBLE_LITERAL_TKN,
-    STRING_LITERAL_TKN,
-    TRUE_TKN,
-    FALSE_TKN,
+    INT_LITERAL,
+    DOUBLE_LITERAL,
+    STRING_LITERAL,
+    TRUE,
+    FALSE,
 
     // Conditionals
-    COND_NOT_TKN,            // !
-    COND_OR_TKN,             // ||
-    COND_AND_TKN,            // &&
-    COND_XOR_TKN,            // $$
-    COND_EQUALS_TKN,         // ==
-    COND_NOT_EQUALS_TKN,     // !=
-    COND_LESS_TKN,           // <
-    COND_LESS_EQUAL_TKN,     // <=
-    COND_GREATER_TKN,        // >
-    COND_GREATER_EQUAL_TKN,  // >=
+    COND_NOT,            // !
+    COND_OR,             // ||
+    COND_AND,            // &&
+    COND_XOR,            // $$
+    COND_EQUALS,         // ==
+    COND_NOT_EQUALS,     // !=
+    COND_LESS,           // <
+    COND_LESS_EQUAL,     // <=
+    COND_GREATER,        // >
+    COND_GREATER_EQUAL,  // >=
 
     // Bitwise Operators
-    BIT_NOT_TKN,          // ~
-    BIT_OR_TKN,           // |
-    BIT_AND_TKN,          // &
-    BIT_XOR_TKN,          // $
-    BIT_SHIFT_LEFT_TKN,   // <<
-    BIT_SHIFT_RIGHT_TKN,  // >>
+    BIT_NOT,          // ~
+    BIT_OR,           // |
+    BIT_AND,          // &
+    BIT_XOR,          // $
+    BIT_SHIFT_LEFT,   // <<
+    BIT_SHIFT_RIGHT,  // >>
 
     // Operators
-    DOT_TKN,
-    OP_ADD_TKN,
-    OP_SUBTR_TKN,
-    OP_MULT_TKN,
-    OP_DIV_TKN,
-    OP_MOD_TKN,
-    OP_CARROT_TKN,  // Exponents
-    OP_ADD_ADD_TKN,
-    OP_ADD_EQUAL_TKN,
-    OP_SUBTR_SUBTR_TKN,
-    OP_SUBTR_EQUAL_TKN,
-    OP_MULT_EQUAL_TKN,
-    OP_DIV_EQUAL_TKN,
-    OP_MOD_EQUAL_TKN,
+    DOT,
+    OP_ADD,
+    OP_SUBTR,
+    OP_MULT,
+    OP_DIV,
+    OP_MOD,
+    OP_CARROT,  // Exponents
+    OP_ADD_ADD,
+    OP_ADD_EQUAL,
+    OP_SUBTR_SUBTR,
+    OP_SUBTR_EQUAL,
+    OP_MULT_EQUAL,
+    OP_DIV_EQUAL,
+    OP_MOD_EQUAL,
 
     // Function Defs
-    ARROW_TKN,          // () "->" void
-    SINGLE_RETURN_TKN,  // add = (a: int, b: int) :: a + b
-    RETURN_TKN,
+    ARROW,          // () "->" void
+    SINGLE_RETURN,  // add = (a: int, b: int) :: a + b
+    RETURN,
 
     // Miscellaneous
-    COMMA_TKN,
-    DEREF_TKN,  // Particle.*
-    END_TKN
+    COMMA,
+    DEREF,  // Particle.*
+    END,
 };
 
 std::string tokenTypeToStr(TokenType type);
@@ -114,16 +114,8 @@ struct Token {
         double doubleVal;
     };
 
-    // inline std::string_view toStr() { return std::string_view(src->c_str() + index, cLen); }
-    // inline std::string toString() { return src->substr(index, cLen); }
     inline std::string toStr() { return src->substr(index, cLen); }
 };
-
-/*
-inline std::string_view tokenToStr(Token& token) {
-    return std::string_view(token.src->c_str() + token.index, token.cLen);
-}
-*/
 
 class Diagnostics;
 
