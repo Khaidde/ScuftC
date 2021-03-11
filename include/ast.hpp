@@ -12,6 +12,8 @@ struct Token;
 struct SymTable;
 
 enum class NodeType {
+    UNKNOWN,
+
     PROGRAM,
     BLOCK,
 
@@ -43,6 +45,8 @@ enum class NodeType {
     BIN_OP
 };
 
+std::string nodeTypeToStr(NodeType type);
+
 struct ASTNode;
 struct ASTExpression;
 struct ASTProgram;
@@ -69,10 +73,10 @@ struct ASTDeref;
 struct ASTBinOp;
 
 template <class T>
-std::unique_ptr<T> makeNode(int index) {
+std::unique_ptr<T> makeNode(int index, int cLen = 1) {
     auto node = std::make_unique<T>();
     node->locIndex = index;
-    node->endIndex = index + 1;
+    node->endIndex = index + cLen;
     return node;
 }
 
@@ -82,15 +86,25 @@ inline std::unique_ptr<T1> castNodePtr(std::unique_ptr<T2>& nodePtr) {
 }
 
 struct ASTNode {
-    const NodeType nodeType;
+    NodeType nodeType;
     int locIndex;
     int endIndex;
     explicit ASTNode(NodeType nodeType) : nodeType(nodeType) {}
 };
 
+template <class T>
+inline std::unique_ptr<T> unknownNode() {
+    auto unknown = std::make_unique<T>();
+    unknown->nodeType = NodeType::UNKNOWN;
+    return unknown;
+}
+
 struct ASTExpression : ASTNode {
+    explicit ASTExpression() : ASTNode(NodeType::UNKNOWN) {}
     explicit ASTExpression(NodeType nodeType) : ASTNode(nodeType) {}
 };
+
+inline std::unique_ptr<ASTExpression> unknownExpr() { return std::make_unique<ASTExpression>(NodeType::UNKNOWN); }
 
 struct ASTProgram : ASTNode {
     std::vector<std::unique_ptr<ASTDecl>> declarations;
@@ -165,13 +179,8 @@ struct ASTTy : ASTExpression {
     ASTTy() : ASTExpression(NodeType::TYPE_DEF) {}
 };
 
-struct FuncParam {
-    std::unique_ptr<ASTName> paramRef;
-    std::unique_ptr<ASTExpression> type;
-};
-
 struct ASTFunc : ASTExpression {
-    std::vector<std::unique_ptr<FuncParam>> parameters;
+    std::vector<std::unique_ptr<ASTDecl>> parameters;
     std::unique_ptr<ASTExpression> returnType;
     std::unique_ptr<ASTNode> blockOrExpr;
     ASTFunc() : ASTExpression(NodeType::FUNC) {}

@@ -10,17 +10,16 @@ int main(int argc, char** argv) {
         std::cerr << "Usage: scft [filePath.scft] -[options...]" << std::endl;
         return EXIT_FAILURE;
     }
+    if (!Flags::parseFlags(argc, argv)) return EXIT_FAILURE;
 
     try {
-        Flags flags(argc, argv);
-        if (flags.unknownFlag) return EXIT_FAILURE;
-
-        Parser parser(flags);
+        Parser parser;
         auto astTree = parser.parseProgram();
         std::cout << parser.DX.out() << std::endl;
+        if (parser.DX.hasErrors()) return EXIT_FAILURE;
 
-        if (flags.dumpAST.print) dumpAST(*astTree, flags.dumpAST.verbose);
-        if (flags.sourceFmt) std::cout << printAST(*astTree) << std::endl;
+        if (Flags::dumpInfo.print) dumpAST(*astTree, Flags::dumpInfo.verbose);
+        if (Flags::sourceFmt) std::cout << printAST(*astTree) << std::endl;
     } catch (const std::exception& e) {
         std::cerr << e.what() << std::endl;
         return EXIT_FAILURE;

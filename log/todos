@@ -32,4 +32,14 @@ x Think of a better way to deal with compiler flags and making them global
     {
         doStuff()
     }
-    
+3/8/21
+- Fix syntax highlighting to correctly highlight "//" (single line comment with no comment)
+- Create context system in diagnostics to report "Error in [context]" at the start of a collection of various errors
+- Parse function parameter as a declaration
+- Build diagnostics string in one cycle
+3/9/21
+- Format diagnostics indicator as the following:
+    3 + type {
+    ^---------
+    3 + 5 - 6 + 4
+        ^---^

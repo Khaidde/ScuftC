@@ -343,6 +343,20 @@
         i = i + 1 // This is a legal line
         c = 4
         // c = c + 1 // This is NOT a legal line
+3/10/21 (Wednesday)
+    - Allow semi-colons to be affirmatively define statement ends
+        // pointA and pointB are equivalent
+        pointA = Point.{ x = 3; y = 4 }
+        pointB = Point.{ x = 3 y = 4 }
+
+        // a is interpretted as a function while b is interpretted as a functionType with proceeding block statement
+        a = () -> bool {
+            doStuff()
+        }
+        b = () -> bool;
+        {
+            doOtherStuff()
+        }
 
 
 

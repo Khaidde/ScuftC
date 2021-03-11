@@ -34,9 +34,8 @@
       } 
     }
 
-  // Big problem... or maybe it isn't?... probably is a problem...
-  add: (int, int) -> int => (a: int, b: int) => a + b 
-  // Alternative syntax: try add: (int, int) -> int => (a: int, b: int) <= a + b
+  add: (int, int) -> int => (a: int, b: int) :: a + b 
+  call = callStuff(3, a + 5, "cool", Other.{})
 
 Point => ty {
   x: int

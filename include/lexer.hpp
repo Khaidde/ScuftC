@@ -120,9 +120,6 @@ struct Token {
 class Diagnostics;
 
 class Lexer {
-    Diagnostics& DX;
-    Flags flags;
-
     int curIndex = 0;
     int curCLen = 0;
 
@@ -130,9 +127,11 @@ class Lexer {
     std::vector<std::unique_ptr<Token>> tokenCache;
 
    public:
+    Diagnostics* DX;
+
     static const size_t TAB_WIDTH = 4;
 
-    Lexer(Diagnostics& diagnostics, Flags flags) : DX(diagnostics), flags(flags) { this->fromFilePath(flags.filePath); }
+    Lexer(Diagnostics* diagnostics) : DX(diagnostics) { this->fromFilePath(Flags::filePath); }
 
     std::string sourceStr;
     void fromFilePath(const char* filePath);

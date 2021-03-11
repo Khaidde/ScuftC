@@ -5,14 +5,14 @@
 #include "lexer.hpp"
 
 Diagnostics& Diagnostics::warn() {
-    msg += "Warning ";
-    warnings++;
+    msg += "\nWarning ";
+    // warnings++;
     return *this;
 }
 
 Diagnostics& Diagnostics::err() {
-    msg += "Error ";
-    errors++;
+    msg += "\nError ";
+    errorCount++;
     return *this;
 }
 
@@ -104,7 +104,7 @@ Diagnostics& Diagnostics::at(const std::string& appendMsg, const Token& token) {
 }
 
 Diagnostics& Diagnostics::at(const std::string& appendMsg, const ASTNode& node) {
-    if (node.endIndex == 0) return this->at(appendMsg, node.locIndex, 1);
+    if (node.endIndex == 0) return this->at(appendMsg, node.locIndex);
     return this->at(appendMsg, node.locIndex, node.endIndex - node.locIndex);
 }
 
@@ -131,13 +131,10 @@ Diagnostics& Diagnostics::fix(const std::string& appendMsg) {
 std::string Diagnostics::out() {
     auto end = std::chrono::steady_clock::now();
     std::chrono::duration<double, std::milli> diff = end - start;
-    if (warnings > 0) {
-        msg += "\n-- " + std::to_string(warnings) + " warning";
-        if (warnings > 1) msg += "s";
+    if (errorCount > 0) {
+        msg += "\n-- " + std::to_string(errorCount) + " error";
+        if (errorCount > 1) msg += "s";
     }
-    if (errors > 0) {
-        msg += "\n-- " + std::to_string(errors) + " error";
-        if (errors > 1) msg += "s";
-    }
-    return msg + "\n-- Finished " + header + " in " + std::to_string(diff.count()) + "ms\n";
+    // return msg + "\n-- Finished " + header + " in " + std::to_string(diff.count()) + "ms\n";
+    return msg + "\n-- Finished";
 }

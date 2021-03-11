@@ -17,7 +17,7 @@ main = (argc: int) {
             print()
         }
         if boolVal {
-            return 10 
+            return (int, Particle) -> void 
         } else if true {
             if (true) {
                 bruh()

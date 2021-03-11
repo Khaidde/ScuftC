@@ -1,0 +1,50 @@
+
+#import("compile")
+
+/*
+Sample code for what a build based library could look like
+Run "scft build" to find a "build.scft" in the current directory and run this file
+*/
+
+// Required function declaration 
+build = (compiler: *Compiler) {
+    compiler.entryFile = "VarDeclTest.scft" // Where to find main function
+
+    compiler.executable = "demo.exe"
+    compiler.outputDir = "../bin" // Where to store the executable when done compiling
+
+    flags: *Flags = compiler.flags
+    flags.dumpAst = true // Print the parser AST output into the console
+    flags.maxErrors = 10 // Max number of errors to report
+
+    /* 
+    Modify the parse tree in production.
+    Capable of modifying and instrumenting the code at compile time
+    For example:
+        original source:
+            funcDoStuff = () -> int {
+                a = 3
+                return a
+            }
+        translated source:
+            funcDoStuff = () -> int {
+                print ("Entering funcDoStuff") // This line is automatically inserted
+                a = 3
+                print ("Leaving funcDoStuff") // This line is automatically inserted
+                return a
+            }
+            
+    */
+    compiler.addParserPass(insertFunction) 
+}
+
+// Simple procedure to replace all declaration names in globa 
+insertFunction = (prgm: *ASTProgram) {
+    factorial: *ASTDecl = AST.fromString(
+        "factorial = (num: int) {
+            if num == 1 return 1
+            return factorial(num - 1) * num
+        }"
+    )
+    prgm.declarations.add(factorial)
+}

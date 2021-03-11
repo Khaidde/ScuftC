@@ -49,44 +49,44 @@ int Parser::getPrecedence(TokenType type) {
     }
 }
 
-void Parser::assertToken(TokenType type, const std::string& msg) {
+bool Parser::assertToken(TokenType type, const std::string& msg) {
     auto actualTkn = lexer.peekToken();
     if (actualTkn->type != type) {
         std::string expectedTknStr = tokenTypeToStr(type);
-        if (msg.empty()) {
-            DX.err().after("Expected " + expectedTknStr + " but found a different token instead", *lexer.lastToken());
-        } else {
-            DX.err().after("Expected " + expectedTknStr + " but found a different token instead. " + msg,
-                           *lexer.lastToken());
+        DX.err().after("Expected " + expectedTknStr + " but found a different token instead", *lexer.lastToken());
+        if (!msg.empty()) {
+            DX.note(msg);
         }
         std::string actualTknStr;
         switch (actualTkn->type) {
             case TokenType::IDENTIFIER:
-                actualTknStr = "'" + actualTkn->toStr() + "'";
+                actualTknStr = "\"" + actualTkn->toStr() + "\"";
                 break;
             case TokenType::STRING_LITERAL:
                 actualTknStr = "String literal";
                 break;
             case TokenType::END:
-                panic(DX);
+                break;
             default:
                 actualTknStr = std::move(actualTkn->toStr());
         }
-        panic(DX.at(actualTknStr + " is not permitted here", *actualTkn));
+        DX.at(actualTknStr + " is not allowed here", *actualTkn);
+        return false;
     }
+    return true;
 }
 
 std::unique_ptr<ASTProgram> Parser::parseProgram() {
     auto prgm = std::make_unique<ASTProgram>();
 
     while (!checkToken(TokenType::END)) {
-        auto declOrExpr = parseDeclOrExpr();
-        if (declOrExpr->nodeType != NodeType::DECL) {
-            panic(DX.err()
-                      .at("Expression is not allowed in global scope", *declOrExpr)
-                      .note("An expression in global scope is never executed"));
+        auto decl = assertParseDeclaration();
+        if (decl->nodeType == NodeType::UNKNOWN) {
+            DX.note("Statements are never executed in global scope");
+        } else {
+            prgm->declarations.push_back(std::move(decl));
         }
-        prgm->declarations.push_back(castNodePtr<ASTDecl>(declOrExpr));
+        if (DX.hasErrors()) return prgm;
     }
     if (!prgm->declarations.empty()) {
         prgm->endIndex = prgm->declarations.back()->endIndex;
@@ -107,8 +107,8 @@ std::unique_ptr<ASTNode> Parser::parseStatement() {
         case TokenType::FOR:
             return parseFor();
         case TokenType::BREAK: {
-            auto brk = makeNode<ASTBreak>(lexer.nextToken()->index);  // Consume break
-            brk->endIndex = lexer.lastToken()->index + lexer.lastToken()->cLen;
+            auto brk = makeNode<ASTBreak>(lexer.peekToken()->index, lexer.peekToken()->cLen);
+            lexer.nextToken();  // Consume break
             if (!checkToken(TokenType::RIGHT_CURLY)) {
                 panic(DX.err()
                           .at("Statements following a break are unreachable", *lexer.peekToken())
@@ -120,8 +120,8 @@ std::unique_ptr<ASTNode> Parser::parseStatement() {
             return brk;
         }
         case TokenType::CONTINUE: {
-            auto cont = makeNode<ASTCont>(lexer.nextToken()->index);  // Consume continue
-            cont->endIndex = lexer.lastToken()->index + lexer.lastToken()->cLen;
+            auto cont = makeNode<ASTCont>(lexer.peekToken()->index, lexer.peekToken()->cLen);
+            lexer.nextToken();  // Consume continue
             if (!checkToken(TokenType::RIGHT_CURLY)) {
                 panic(DX.err()
                           .at("Statements following a continue are unreachable", *lexer.peekToken())
@@ -178,8 +178,8 @@ std::unique_ptr<ASTIf> Parser::parseIf() {
     auto ifStmt = makeNode<ASTIf>(lexer.nextToken()->index);  // Consume if
     ifStmt->condition = parseExpression();
 
-    if (checkToken(TokenType::RIGHT_PARENS)) {
-        panic(DX.err().at("Unbalanced parenthesis. Expected {", *lexer.peekToken()));
+    if (checkToken(TokenType::RIGHT_CURLY)) {
+        panic(DX.err().at("Unbalanced parenthesis. Expected {", *lexer.peekToken()).fix("Replace } with {"));
     }
 
     ifStmt->conseq = checkToken(TokenType::LEFT_CURLY) ? parseBlock() : parseStatement();
@@ -223,6 +223,33 @@ std::unique_ptr<ASTFor> Parser::parseFor() {
     return forLoop;
 }
 
+std::unique_ptr<ASTDecl> Parser::assertParseDeclaration() {
+    switch (lexer.peekToken()->type) {
+        case TokenType::IF: {
+            auto ifStmt = parseIf();
+            DX.err().at("If statement is not allowed here", *ifStmt);  // Consume if
+            break;
+        }
+        case TokenType::WHILE:
+            DX.err().at("While loop is not allowed here", *lexer.nextToken());  // Consume while
+            break;
+        case TokenType::FOR:
+            DX.err().at("For loop is not allowed here", *lexer.nextToken());  // Consume for
+            break;
+            // TODO add error checking for break, continue and return statements
+        default:
+            auto declOrExpr = parseDeclOrExpr();
+            if (declOrExpr->nodeType != NodeType::DECL) {
+                if (declOrExpr->nodeType != NodeType::UNKNOWN) {
+                    DX.err().at(nodeTypeToStr(declOrExpr->nodeType) + " is not allowed here", *declOrExpr);
+                }
+            } else {
+                return castNodePtr<ASTDecl>(declOrExpr);
+            }
+    }
+    return unknownNode<ASTDecl>();
+}
+
 std::unique_ptr<ASTNode> Parser::parseDeclOrExpr() {
     auto decl = makeNode<ASTDecl>(lexer.peekToken()->index);
 
@@ -246,7 +273,6 @@ std::unique_ptr<ASTNode> Parser::parseDeclOrExpr() {
         decl->endIndex = decl->type->endIndex;
     }
 
-    // TODO test and remove later
     if (decl->lvalue->nodeType == NodeType::NAME) {
         auto name = static_cast<ASTName&>(*decl->lvalue);
         if (!globalTable.find(name.ref)) {
@@ -257,114 +283,51 @@ std::unique_ptr<ASTNode> Parser::parseDeclOrExpr() {
     return decl;
 }
 
-std::unique_ptr<ASTMod> Parser::parseModule() {
-    ASSERT(lexer.peekToken()->type == TokenType::MOD, "Module must start with a mod token");
-    auto module = makeNode<ASTMod>(lexer.nextToken()->index);  // Consume mod
-
-    assertToken(TokenType::LEFT_CURLY, "Module must be of the form mod {...}");
-    lexer.nextToken();  // Consume {
-
-    while (!checkToken(TokenType::RIGHT_CURLY) && !checkToken(TokenType::END)) {
-        auto declOrExpr = parseDeclOrExpr();
-        if (declOrExpr->nodeType != NodeType::DECL) {
-            panic(DX.err()
-                      .at("Error in module", *module)
-                      .at("Expression is not allowed here", *declOrExpr)
-                      .note("A free-floating expression in a module is never executed"));
-        }
-        module->declarations.push_back(castNodePtr<ASTDecl>(declOrExpr));
-    }
-    if (checkToken(TokenType::END)) {
-        panic(DX.err()
-                  .at("Error in module", *module)
-                  .after("Unterminated code at end of file. Expected closing }", *lexer.lastToken()));
-    } else {
-        module->endIndex = lexer.nextToken()->index + 1;  // Consume }
-    }
-    return module;
-}
-
-std::unique_ptr<ASTTy> Parser::parseTy() {
-    ASSERT(lexer.peekToken()->type == TokenType::TY, "Type definition must start with a ty token");
-    auto ty = makeNode<ASTTy>(lexer.nextToken()->index);  // Consume ty
-
-    assertToken(TokenType::LEFT_CURLY, "Type definition must be of the form ty {...}");
-    lexer.nextToken();  // Consume {
-
-    while (!checkToken(TokenType::RIGHT_CURLY) && !checkToken(TokenType::END)) {
-        auto declOrExpr = parseDeclOrExpr();
-        if (declOrExpr->nodeType != NodeType::DECL) {
-            panic(DX.err()
-                      .at("Error in type definition", *ty)
-                      .at("Expression is not allowed here", *declOrExpr)
-                      .note("A free-floating expression in a type definition is never executed"));
-        }
-        ty->declarations.push_back(castNodePtr<ASTDecl>(declOrExpr));
-    }
-    if (checkToken(TokenType::END)) {
-        panic(DX.err()
-                  .at("Error in type definition", *ty)
-                  .after("Unterminated code at end of file. Expected closing }", *lexer.lastToken()));
-    } else {
-        ty->endIndex = lexer.nextToken()->index + 1;  // Consume }
-    }
-    return ty;
-}
-
 std::unique_ptr<ASTExpression> Parser::parseLeftParenExpression(int depth) {
     ASSERT(lexer.peekToken()->type == TokenType::LEFT_PARENS, "Left parenthesis expression must start with (");
     auto func = makeNode<ASTFunc>(lexer.nextToken()->index);  // Consume (
 
     bool isFunction = false;
     while (!checkToken(TokenType::RIGHT_PARENS) && !checkToken(TokenType::END)) {
-        auto paramRef = parseExpression();
-
-        if (paramRef->nodeType != NodeType::NAME) {
+        auto funcParam = parseDeclOrExpr();
+        if (funcParam->nodeType == NodeType::DECL) {
+            func->parameters.push_back(castNodePtr<ASTDecl>(funcParam));
+        } else {
+            if (funcParam->nodeType == NodeType::UNKNOWN) {
+                DX.note("Function parameter must be a variable declaration");
+                break;
+            }
             if (isFunction) {
-                panic(DX.err()
-                          .after("Expected a name for the function parameter", *lexer.lastToken())
-                          .at(lexer.peekToken()->toStr() + " is not allowed here", *lexer.peekToken()));
+                DX.err()
+                    .at("Error in function", *func)
+                    .at("Expression is not allowed here", *funcParam)
+                    .note("Function parameter must declare a variable");
             } else {
-                return parseFunctionType(paramRef, depth);
+                return parseFunctionType(castNodePtr<ASTExpression>(funcParam), depth);
             }
         }
-
-        if (!checkToken(TokenType::COLON)) {
-            if (isFunction) {
-                panic(
-                    DX.err()
-                        .after(
-                            "Expected a colon. Function parameter must declare a type in the form [param name]: [type]",
-                            *lexer.lastToken())
-                        .at(lexer.peekToken()->toStr() + " is not allowed here", *lexer.peekToken()));
-            } else {
-                return parseFunctionType(paramRef, depth);
-            }
-        }
-        lexer.nextToken();  // Consume :
-
-        auto funcParam = std::make_unique<FuncParam>();
-        funcParam->paramRef = castNodePtr<ASTName>(paramRef);
-        funcParam->type = parseExpression();
-        func->parameters.push_back(std::move(funcParam));
-
         if (checkToken(TokenType::COMMA)) {
             lexer.nextToken();  // Consume ,
-            if (checkToken(TokenType::RIGHT_PARENS) || checkToken(TokenType::END)) {
-                panic(DX.err().after("Expected another function parameter after the comma but go nothing",
-                                     *lexer.lastToken()));
+            if (checkToken(TokenType::RIGHT_PARENS)) {
+                DX.err().after("Expected another function parameter after the comma", *lexer.lastToken());
+                break;
             }
-        } else if (!checkToken(TokenType::RIGHT_PARENS)) {
-            panic(DX.err().after("Expected either , or ) in function parameter list", *lexer.lastToken()));
+        } else if (!checkToken(TokenType::RIGHT_PARENS) && !checkToken(TokenType::END)) {
+            DX.err().after("Expected either , or ) in function parameter list", *lexer.lastToken());
+            break;
         }
         isFunction = true;
     }
     if (checkToken(TokenType::END)) {
-        panic(DX.err()
-                  .at("Error in function", *func)
-                  .after("Unterminated code at end of file. Expected another function parameter", *lexer.lastToken()));
+        DX.err()
+            .at("Error in function", *func)
+            .after("Unterminated code at end of file. Expected another function parameter", *lexer.lastToken());
     } else {
         lexer.nextToken();  // Consume )
+    }
+    if (DX.hasErrors()) {
+        func->endIndex = lexer.lastToken()->index + lexer.lastToken()->cLen;
+        return func;
     }
 
     if (checkToken(TokenType::ARROW)) {
@@ -378,24 +341,28 @@ std::unique_ptr<ASTExpression> Parser::parseLeftParenExpression(int depth) {
         lexer.nextToken();  // Consume ::
         func->returnType = nullptr;
         func->blockOrExpr = parseExpression();
+        if (func->blockOrExpr->nodeType == NodeType::UNKNOWN) {
+            DX.note("Function shorthand must be in the form (...) :: [return expression]");
+            func->endIndex = lexer.lastToken()->index + lexer.lastToken()->cLen;
+        }
     } else {
         if (checkToken(TokenType::END) && func->returnType == nullptr) {
-            panic(DX.err().after("Expected a return type or function block but got nothing", *lexer.lastToken()));
+            DX.err().after("Expected a return type or function block", *lexer.lastToken());
+            func->endIndex = lexer.lastToken()->index + lexer.lastToken()->cLen;
+        } else {
+            if (!checkToken(TokenType::LEFT_CURLY) && func->returnType != nullptr) {
+                auto funcType = makeNode<ASTFuncType>(func->locIndex, func->returnType->endIndex);
+                funcType->outType = std::move(func->returnType);
+            } else if (assertToken(TokenType::LEFT_CURLY, "Function body must be start with { and end with }")) {
+                func->blockOrExpr = parseBlock();
+                func->endIndex = func->blockOrExpr->endIndex;
+            }
         }
-        if (!checkToken(TokenType::LEFT_CURLY) && func->returnType != nullptr) {
-            auto funcType = makeNode<ASTFuncType>(func->locIndex);
-            funcType->outType = std::move(func->returnType);
-            return funcType;
-        }
-        assertToken(TokenType::LEFT_CURLY, "Function body must be surrounded in curly brackets {}");
-        func->blockOrExpr = parseBlock();
     }
-    func->endIndex = func->blockOrExpr->endIndex;
-
     return func;
 }
 
-std::unique_ptr<ASTExpression> Parser::parseFunctionType(std::unique_ptr<ASTExpression>& reduceExpr, int depth) {
+std::unique_ptr<ASTExpression> Parser::parseFunctionType(std::unique_ptr<ASTExpression> reduceExpr, int depth) {
     auto funcType = makeNode<ASTFuncType>(reduceExpr->locIndex);
 
     do {
@@ -408,7 +375,7 @@ std::unique_ptr<ASTExpression> Parser::parseFunctionType(std::unique_ptr<ASTExpr
         if (checkToken(TokenType::COMMA)) {
             lexer.nextToken();  // Consume ,
             if (checkToken(TokenType::RIGHT_PARENS) || checkToken(TokenType::END)) {
-                panic(DX.err().after("Expected another type after the comma but go nothing", *lexer.lastToken()));
+                panic(DX.err().after("Expected another type after the comma", *lexer.lastToken()));
             }
         } else if (!checkToken(TokenType::RIGHT_PARENS)) {
             DX.err();
@@ -447,14 +414,70 @@ std::unique_ptr<ASTExpression> Parser::parseExpression() { return recurExpressio
 std::unique_ptr<ASTExpression> Parser::parseOperand(int depth) {
     auto tkn = lexer.peekToken();
     switch (tkn->type) {
-        case TokenType::MOD:
-            return parseModule();
-        case TokenType::TY:
-            return parseTy();
+        case TokenType::MOD: {
+            // parseMod
+            auto mod = makeNode<ASTMod>(tkn->index, tkn->cLen);
+            lexer.nextToken();  // Consume mod
+
+            if (!assertToken(TokenType::LEFT_CURLY, "Module must be of the form mod {...}")) {
+                return unknownExpr();
+            }
+            lexer.nextToken();  // Consume {
+
+            while (!checkToken(TokenType::RIGHT_CURLY) && !checkToken(TokenType::END)) {
+                auto decl = assertParseDeclaration();
+                if (decl->nodeType == NodeType::UNKNOWN) {
+                    DX.note("Statements are never executed in the declaration of a module");
+                } else {
+                    mod->declarations.push_back(std::move(decl));
+                }
+            }
+            if (checkToken(TokenType::END)) {
+                DX.err()
+                    .at("Error in module", *mod)
+                    .after("Unterminated code at end of file. Expected closing }", *lexer.lastToken());
+                mod->endIndex = lexer.lastToken()->index + lexer.lastToken()->cLen;
+            } else {
+                mod->endIndex = lexer.nextToken()->index + 1;  // Consume }
+            }
+            return mod;
+        }
+        case TokenType::TY: {
+            // parseTy
+            auto ty = makeNode<ASTTy>(tkn->index, tkn->cLen);
+            lexer.nextToken();  // Consume ty
+
+            if (!assertToken(TokenType::LEFT_CURLY, "Type definition must be of the form ty {...}")) {
+                return unknownExpr();
+            }
+            lexer.nextToken();  // Consume {
+
+            while (!checkToken(TokenType::RIGHT_CURLY) && !checkToken(TokenType::END)) {
+                auto declOrExpr = parseDeclOrExpr();
+                if (declOrExpr->nodeType == NodeType::DECL) {
+                    ty->declarations.push_back(castNodePtr<ASTDecl>(declOrExpr));
+                } else {
+                    if (declOrExpr->nodeType != NodeType::UNKNOWN) {
+                        DX.err()
+                            .at("Error in type definition", *ty)
+                            .at("Expression is not allowed here", *declOrExpr)
+                            .note("A free-floating expression in a type definition is never executed");
+                    }
+                }
+            }
+            if (checkToken(TokenType::END)) {
+                DX.err()
+                    .at("Error in type definition", *ty)
+                    .after("Unterminated code at end of file. Expected closing }", *lexer.lastToken());
+                ty->endIndex = lexer.lastToken()->index + lexer.lastToken()->cLen;
+            } else {
+                ty->endIndex = lexer.nextToken()->index + 1;  // Consume }
+            }
+            return ty;
+        }
         case TokenType::IDENTIFIER: {
-            auto name = makeNode<ASTName>(tkn->index);
-            name->ref = lexer.nextToken();
-            name->endIndex = tkn->index + tkn->cLen;
+            auto name = makeNode<ASTName>(tkn->index, tkn->cLen);
+            name->ref = lexer.nextToken();  // Consume [identifier]
             return name;
         }
         case TokenType::VOID_TYPE:
@@ -464,9 +487,8 @@ std::unique_ptr<ASTExpression> Parser::parseOperand(int depth) {
         case TokenType::DOUBLE_TYPE:
         case TokenType::STRING_TYPE:
         case TokenType::BOOL_TYPE: {
-            auto typeLit = makeNode<ASTTypeLit>(tkn->index);
-            typeLit->type = lexer.nextToken()->type;
-            typeLit->endIndex = tkn->index + tkn->cLen;
+            auto typeLit = makeNode<ASTTypeLit>(tkn->index, tkn->cLen);
+            typeLit->type = lexer.nextToken()->type;  // Consume [type token]
             return typeLit;
         }
         case TokenType::INT_LITERAL:
@@ -474,9 +496,8 @@ std::unique_ptr<ASTExpression> Parser::parseOperand(int depth) {
         case TokenType::STRING_LITERAL:
         case TokenType::TRUE:
         case TokenType::FALSE: {
-            auto lit = makeNode<ASTLit>(tkn->index);
-            lit->value = lexer.nextToken();
-            lit->endIndex = tkn->index + tkn->cLen;
+            auto lit = makeNode<ASTLit>(tkn->index, tkn->cLen);
+            lit->value = lexer.nextToken();  // Consume [literal token]
             return lit;
         }
         case TokenType::COND_NOT:
@@ -494,14 +515,15 @@ std::unique_ptr<ASTExpression> Parser::parseOperand(int depth) {
         }
         default:
             if (checkToken(TokenType::END)) {
-                panic(DX.err().after("Expected an expression but instead reached the end of the file",
-                                     *lexer.lastToken()));
+                DX.err().after("Expected an expression but instead reached the end of the file", *lexer.lastToken());
             } else {
                 // TODO figure out a way to create more descriptive error messages
-                panic(DX.err()
-                          .after("Expected an expression", *lexer.lastToken())
-                          .at("Instead got " + tokenTypeToStr(lexer.peekToken()->type), *lexer.peekToken()));
+                DX.err().at(
+                    "Expected an expression but found '" + tokenTypeToStr(lexer.peekToken()->type) + "' instead",
+                    *lexer.peekToken());
+                lexer.nextToken();  // Consume [unknown expression]
             }
+            return unknownExpr();
     }
 }
 
@@ -513,11 +535,31 @@ std::unique_ptr<ASTExpression> Parser::recurExpression(int prec, int depth) {
         if (peekedPrec > prec) {
             if (checkToken(TokenType::LEFT_PARENS)) {
                 // parseCall
-                auto call = makeNode<ASTCall>(expr->locIndex);
+                auto call = makeNode<ASTCall>(expr->locIndex, expr->endIndex - expr->locIndex);
                 call->callRef = std::move(expr);
-                call->arguments = parseExprList();
 
-                call->endIndex = lexer.lastToken()->index + 1;
+                lexer.nextToken();  // Consume (
+                while (!checkToken(TokenType::RIGHT_PARENS) && !checkToken(TokenType::END)) {
+                    auto expr = parseExpression();
+                    if (expr->nodeType != NodeType::UNKNOWN) {
+                        call->arguments.push_back(std::move(expr));
+                    }
+                    if (checkToken(TokenType::COMMA)) {
+                        lexer.nextToken();  // Consume ,
+                        if (checkToken(TokenType::RIGHT_PARENS)) {
+                            DX.err().after("Expected another expression after the comma", *lexer.lastToken());
+                        }
+                    } else if (!checkToken(TokenType::RIGHT_PARENS) && !checkToken(TokenType::END)) {
+                        DX.err().after("Expected either , or ) in call argument list", *lexer.lastToken());
+                        break;
+                    }
+                }
+                if (checkToken(TokenType::END)) {
+                    DX.err().after("Unterminated code at end of file. Expected another expression", *lexer.lastToken());
+                } else if (checkToken(TokenType::RIGHT_PARENS)) {
+                    lexer.nextToken();  // Consume )
+                }
+                call->endIndex = lexer.lastToken()->index + lexer.lastToken()->cLen;
                 expr = std::move(call);
             } else if (checkToken(TokenType::DEREF)) {
                 auto deref = makeNode<ASTDeref>(lexer.nextToken()->index);  // Consume .*
@@ -528,49 +570,54 @@ std::unique_ptr<ASTExpression> Parser::recurExpression(int prec, int depth) {
                 lexer.nextToken();  // Consume .
                 if (checkToken(TokenType::LEFT_CURLY)) {
                     // parseTypeInit
-                    auto typeInit = makeNode<ASTTypeInit>(expr->locIndex);
+                    auto typeInit = makeNode<ASTTypeInit>(expr->locIndex, expr->endIndex - expr->locIndex);
                     lexer.nextToken();  // Consume {
                     typeInit->typeRef = std::move(expr);
 
                     while (!checkToken(TokenType::RIGHT_CURLY) && !checkToken(TokenType::END)) {
                         auto declOrExpr = parseDeclOrExpr();
-                        if (declOrExpr->nodeType != NodeType::DECL) {
-                            panic(DX.err()
-                                      .at("Error in type initializer", *typeInit)
-                                      .at("Expressions are not allowed here", *declOrExpr));
+                        if (declOrExpr->nodeType == NodeType::DECL) {
+                            auto assignmentDecl = castNodePtr<ASTDecl>(declOrExpr);
+                            if (assignmentDecl->type != nullptr) {
+                                DX.err()
+                                    .at("Error in type initializer", *typeInit)
+                                    .at("Variable declaration is not allowed here", *assignmentDecl);
+                            }
+                            typeInit->assignments.push_back(std::move(assignmentDecl));
+                        } else {
+                            if (declOrExpr->nodeType != NodeType::UNKNOWN) {
+                                DX.err()
+                                    .at("Error in type initializer", *typeInit)
+                                    .at("Expression is not allowed here", *declOrExpr);
+                            }
                         }
-                        auto assignmentDecl = castNodePtr<ASTDecl>(declOrExpr);
-                        if (assignmentDecl->type != nullptr) {
-                            panic(DX.err()
-                                      .at("Error in type initializer", *typeInit)
-                                      .at("Variable declaration is not allowed here", *assignmentDecl));
-                        }
-                        typeInit->assignments.push_back(std::move(assignmentDecl));
-
                         if (checkToken(TokenType::COMMA)) {
                             lexer.nextToken();  // Consume ,
-                        } else if (!checkToken(TokenType::RIGHT_CURLY)) {
-                            panic(DX.err()
-                                      .at("Error in type initializer", *typeInit)
-                                      .after("Expected either , or }", *lexer.lastToken()));
+                        } else if (!checkToken(TokenType::RIGHT_CURLY) && !checkToken(TokenType::END)) {
+                            DX.err()
+                                .at("Error in type initializer", *typeInit)
+                                .after("Expected either , or }", *lexer.lastToken());
+                            break;
                         }
                     }
                     if (checkToken(TokenType::END)) {
-                        panic(DX.err()
-                                  .at("Error in type initializer", *typeInit)
-                                  .after("Unterminated code at end of file. Expected closing }", *lexer.lastToken()));
-                    } else {
-                        typeInit->endIndex = lexer.nextToken()->index + 1;  // Consume }
+                        DX.err()
+                            .at("Error in type initializer", *typeInit)
+                            .after("Unterminated code at end of file. Expected closing }", *lexer.lastToken());
+                    } else if (checkToken(TokenType::RIGHT_CURLY)) {
+                        lexer.nextToken();  // Consume }
                     }
+                    typeInit->endIndex = lexer.lastToken()->index + lexer.lastToken()->cLen;
                     expr = std::move(typeInit);
                 } else {
                     auto dotOp = makeNode<ASTDotOp>(expr->locIndex);
                     dotOp->base = std::move(expr);
                     auto member = recurExpression(peekedPrec, depth);
                     if (member->nodeType != NodeType::NAME) {
-                        panic(DX.err().at("Expected a member variable of " + printExpr(*dotOp->base) + " but found " +
-                                              printExpr(*member) + " instead",
-                                          *member));
+                        DX.err().at("Expected a member variable of " + printExpr(*dotOp->base) + " but found " +
+                                        printExpr(*member) + " instead",
+                                    *member);
+                        return unknownExpr();
                     }
                     dotOp->member = castNodePtr<ASTName>(member);
                     dotOp->endIndex = dotOp->member->endIndex;
@@ -588,28 +635,4 @@ std::unique_ptr<ASTExpression> Parser::recurExpression(int prec, int depth) {
             return expr;
         }
     }
-}
-
-std::vector<std::unique_ptr<ASTExpression>> Parser::parseExprList() {
-    std::vector<std::unique_ptr<ASTExpression>> exprVec;
-
-    assertToken(TokenType::LEFT_PARENS);
-    lexer.nextToken();  // Consume (
-    while (!(checkToken(TokenType::RIGHT_PARENS) || checkToken(TokenType::END))) {
-        exprVec.push_back(parseExpression());
-        if (checkToken(TokenType::COMMA)) {
-            lexer.nextToken();  // Consume ,
-            if (checkToken(TokenType::RIGHT_PARENS) || checkToken(TokenType::END)) {
-                panic(DX.err().after("Expected another expression after the comma but go nothing", *lexer.lastToken()));
-            }
-        } else if (!checkToken(TokenType::RIGHT_PARENS)) {
-            panic(DX.err().after("Expected either , or )", *lexer.lastToken()));
-        }
-    }
-    if (checkToken(TokenType::END)) {
-        panic(DX.err().after("Unterminated code at end of file. Expected another expression", *lexer.lastToken()));
-    } else {
-        lexer.nextToken();  // Consume )
-    }
-    return exprVec;
 }

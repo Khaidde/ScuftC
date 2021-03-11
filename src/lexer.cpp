@@ -176,8 +176,8 @@ std::unique_ptr<Token> Lexer::consumeToken() {
     curCLen++;
     switch (sourceStr[curIndex]) {
         case ';':
-            if (!flags.dwSemiColons) {
-                DX.warn()
+            if (!Flags::dwSemiColons) {
+                DX->warn()
                     .at("Semi-colons are not required in this language", curIndex)
                     .note("Semi-colons are treated as whitespace. Use -dw-semi-colons to disable warning");
             }
@@ -289,7 +289,7 @@ std::unique_ptr<Token> Lexer::consumeToken() {
                 curCLen++;
                 return makeToken(TokenType::OP_MULT_EQUAL);
             } else if (isCursorChar('/')) {
-                panic(DX.err().at("Invalid closing of block comment", curIndex));
+                panic(DX->err().at("Invalid closing of block comment", curIndex));
             } else {
                 return makeToken(TokenType::OP_MULT);
             }
@@ -311,7 +311,7 @@ std::unique_ptr<Token> Lexer::consumeToken() {
                 }
                 curCLen++;
                 if (curIndex + curCLen > sourceStr.length()) {
-                    panic(DX.err().at("Unterminated block comment", curIndex));
+                    panic(DX->err().at("Unterminated block comment", curIndex));
                 }
                 curIndex += curCLen;
                 curCLen = 0;
@@ -337,7 +337,7 @@ std::unique_ptr<Token> Lexer::consumeToken() {
             }
             curCLen++;
             if (curIndex + curCLen > sourceStr.length()) {
-                panic(DX.err().at("Unterminated string literal", curIndex));
+                panic(DX->err().at("Unterminated string literal", curIndex));
             }
             return makeToken(TokenType::STRING_LITERAL);
         }
@@ -412,12 +412,12 @@ std::unique_ptr<Token> Lexer::consumeToken() {
                     if (ch != '_') {
                         if (ch == '.') {
                             if (sourceStr[curIndex + curCLen - 1] == '_') {
-                                panic(DX.err().at("Underscore is not allowed here", curIndex + curCLen - 1));
+                                panic(DX->err().at("Underscore is not allowed here", curIndex + curCLen - 1));
                             }
                             if (divisor > 0) {
-                                panic(DX.err().at("Numeric literal has too many decimal points \"" +
-                                                      sourceStr.substr(curIndex, curCLen) + ".\"",
-                                                  curIndex + curCLen));
+                                panic(DX->err().at("Numeric literal has too many decimal points \"" +
+                                                       sourceStr.substr(curIndex, curCLen) + ".\"",
+                                                   curIndex + curCLen));
                             } else {
                                 divisor = 1;
                             }
@@ -445,22 +445,22 @@ std::unique_ptr<Token> Lexer::consumeToken() {
                                     if ((number > INT_MAX || number < 0) && !overflow) overflow = true;
                                 }
                             } else {
-                                panic(DX.err().at(std::to_string(toNum(ch)) + " is an invalid digit value in base " +
-                                                      std::to_string(base),
-                                                  curIndex + curCLen));
+                                panic(DX->err().at(std::to_string(toNum(ch)) + " is an invalid digit value in base " +
+                                                       std::to_string(base),
+                                                   curIndex + curCLen));
                             }
                         }
                     } else if (divisor == 1) {
-                        panic(DX.err().at("Underscore is not allowed here", curIndex + curCLen));
+                        panic(DX->err().at("Underscore is not allowed here", curIndex + curCLen));
                     }
                     curCLen++;
                     ch = sourceStr[curIndex + curCLen];
                 }
                 if (sourceStr[curIndex + curCLen - 1] == '_') {
-                    panic(DX.err().at("Underscore is not allowed here", curIndex + curCLen - 1));
+                    panic(DX->err().at("Underscore is not allowed here", curIndex + curCLen - 1));
                 }
                 if (overflow && divisor == 0) {
-                    DX.warn()
+                    DX->warn()
                         .at("Numeric literal is too large to fit in an int ", curIndex, curCLen)
                         .note("The max value for an int literal is 2^31-1 = 2_147_483_647");
                 }

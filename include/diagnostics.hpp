@@ -5,6 +5,8 @@
 #include <string>
 
 #include "ast.hpp"
+#include "flags.hpp"
+#include "lexer.hpp"
 
 struct Token;
 class Lexer;
@@ -25,28 +27,36 @@ class Lexer;
 
 struct ASTNode;
 
+struct Error {
+    const char* msg;
+    int locIndex;
+    int cLen;
+    inline Error(const char* msg) : msg(msg) {}
+};
+
 class Diagnostics {
     static const char TOTAL_DISPLAY_LINES = 3;
     static const char LINE_NUM_LEADING_WHITESPACE = 2;
     static const char LINE_NUM_TRAILING_WHITESPACE = 3;
 
     std::chrono::high_resolution_clock::time_point start;
-    std::string header;
     std::string msg;
     Lexer* lexer;
 
-    int warnings = 0;
-    int errors = 0;
+    // int warnings = 0;
+    int errorCount = 0;
+
+    std::vector<Error> errors;
 
     Diagnostics& withIndicator(int col, int length, int leadingNumSpace);
 
    public:
-    Diagnostics(std::string header, Lexer* lexer) : header(std::move(header)), lexer(lexer) {
-        start = std::chrono::high_resolution_clock::now();
-    }
+    Diagnostics(Lexer* lexer) : lexer(lexer) { start = std::chrono::high_resolution_clock::now(); }
 
     Diagnostics& warn();
     Diagnostics& err();
+
+    inline bool hasErrors() { return errorCount > 0; };
 
     Diagnostics& at(const std::string& appendMsg, int index, int indicatorLen = 1, bool useNewLine = false);
     Diagnostics& at(const std::string& appendMsg, const Token& token);
