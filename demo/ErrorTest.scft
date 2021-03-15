@@ -1,45 +1,76 @@
+// Code which triggers syntactic compiler errors
 
-// --- parseProgram
-// if true {} // If statement is not allowed in global scope 
-// while true {} // While loop is not allowed in global scope 
-// for {} // For loop is not allowed in global scope 
-// 123 + 3 // Expression is not allowed in global scope
+// --- parse_program
+// if true {} // If statement is not allowed here
+// while true {} // While loop is not allowed here 
+// for {} // For loop is not allowed here 
+// break // break is not allowed here
+// continue // continue is not allowed here
+// return 43 // return is not allowed here
+// 123 + 3 // [Expression] is not allowed here 
 
-// --- parseExpression
-// expr = 32 + // Expected an expression but instead reached the end of the file
-// expr = 34 + if // Expected an expression. Instead got [tokenType] 
-// expr = root.43 // Expected a member variable of [root] but found [token] instead    
+// --- parse_statement
+// stmt = () { for { break 3 + 5 } } // Unreachable statement following break
+// stmt = () { while 1 { continue stmt() } } // Unreachable statement following continue 
+// stmt = () { doStuff() return 3 doOther() } // Unreachable statement following return 
+// stmt = () { if true {} if 2 + 3 else doStuff() } // Expected a statement keyword like if, while, for, etc
 
-// --- parseModule
-modExpr = mod {
-    if
-    123 + 3 - 10
-}
-// modExpr = mod 3 // Module must be of the form mod {...}
-// modExpr = mod { a = 3 3 + 4 "other" c = 10 } // Expression is not allowed here
-// modExpr = mod { a = 10.2 // Unterminated code at end of file. Expected closing }
+// --- parse_block
+// block = () { doStuff() // Mismatched curl brackets. Start of block found here
 
-// --- parseTy
-// tyExpr = ty "thing" // Type definition must be of the form ty {...}
-// tyExpr = ty { true a = -123 "other" b = false } // Expression is not allowed here
-// tyExpr = ty { a = false // Unterminated code at end of file. Expected closing }
+// --- parse_if
+// ifStmt = () { if 2 + 3 {} else if 1 {} else // Unterminated code at end of file. Expected if keyword or {
 
-// --- parseFunction (parseLeftParenExpression)
-// funcExpr = (a: string, if) {} // Function parameter must be a variable declaration 
-// funcExpr = (a: string, 3 + 3, b: bool, varName) {} // Expression is not allowed here
+// --- parse_for
+// TODO
+
+// --- assert_parse_decl
+// See parse_program
+a = 1237498721947932749732947
+
+// --- parse_function (parse_left_paren_expr)
+// funcExpr = (a: string, if, 3 + 4) {} // Function parameter must declare a variable 
+// funcExpr = (a: string, 3 + 3, b: bool, varName) {} // Expression is not allowed in funtion parameter list
 // funcExpr = (a: int, )  {} // Expected another function parameter after the comma
 // funcExpr = (a: bool 3 + 3) {} // Expected either , or ) in function parameter list
 // funcExpr = (a: type // Unterminated code at end of file. Expected another function parameter
-// funcExpr = (a: int) :: if // Function shorthand must be in the form (...) :: [return expression]
+// funcExpr = (a: int) :: return 3 + 4 // Return is not allowed here
+// funcExpr = (a: int) :: if // Must have an expression immediately after :: 
 // funcExpr = (a: bool) // Expected a return type or function block
+// funcExpr = (a: bool) 3 + 4 // Function body must start with { and end with }
 
-// --- parseCall
+// --- parse_function_type
+// funcTypeExpr = (int, bool, ) -> int // Expected another type after the comma
+// funcTypeExpr = (3 + (int // Not enough parenthesis
+// funcTypeExpr = (int, bool Particle) -> 3 + 4 // Expected either , or ) in function type input list
+// funcTypeExpr = (int, bool // Unterminated code at end of file. Expected another type
+// funcTypeExpr = (string, double, string) // Function type must explicitly declare a return type
+
+// --- parse_module
+// modExpr = addOther(mod a = 3 } ) // Expected { after mod keyword
+// modExpr = mod { a = 3 3 + 4 "other" c = 10 } // [Expression] is not allowed here
+// modExpr = mod { a = 10.2 // Unterminated code at end of file. Expected closing }
+
+// --- parse_ty
+// tyExpr = ty a = "thing" } // Expected { after ty keyword
+// tyExpr = ty { true a = -123 "other" b = false } // [Expression] is not allowed here
+// tyExpr = ty { a = false // Unterminated code at end of file. Expected closing }
+
+// --- parse_expr
+// expr = 32 + // Expected an expression but instead reached the end of the file
+// expr = 34 + if // Expected an expression but found [tokenType] instead
+// expr = (3 + 4)) // Too many closing parenthesis
+
+// --- parse_call
 // call = add(3, ) // Expected another expression after the comma
-// call = add(3, 5 + 6 while) // Expected either , or ) in call argument list
+// call = add(3, 5 + 6 "test") // Expected either , or ) in call argument list
 // call = add(2, 55  // Unterminated code at end of file. Expected another expression
 
-// --- parseTypeInit
-// init = Particle.{ a = 3, other, 123, 3 + 5, b = 2 } // Expression is not allowed here
+// --- parse_type_init
+// init = Particle.{ a = 3, other, 123, 3 + 5, b = 2 } // [Expression] is not allowed here
 // init = Particle.{ a = 5, b: int = 3 } // Variable declaration is not allowed here
-// init = Particle.{ a = 6, b = 5 if if } // Expected either , or }
+// init = Particle.{ a = 6, b = 5 c = 3 + 5 } // Expected either , or }
 // init = Particle.{ a = 7 // Unterminated code at end of file. Expected closing }
+
+// --- parse_dot_op
+// expr = call(other.root.43 + 4, 4) // Expected a member variable of [root] but found [token] instead    

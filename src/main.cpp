@@ -14,9 +14,10 @@ int main(int argc, char** argv) {
 
     try {
         Parser parser;
-        auto astTree = parser.parseProgram();
-        std::cout << parser.DX.out() << std::endl;
-        if (parser.DX.hasErrors()) return EXIT_FAILURE;
+        parser.lexer.fromFilePath(Flags::filePath);
+        auto astTree = parser.parse_program();
+        std::cout << parser.dx.emit() << std::endl;
+        if (parser.dx.has_errors()) return EXIT_FAILURE;
 
         if (Flags::dumpInfo.print) dumpAST(*astTree, Flags::dumpInfo.verbose);
         if (Flags::sourceFmt) std::cout << printAST(*astTree) << std::endl;
@@ -25,9 +26,6 @@ int main(int argc, char** argv) {
         return EXIT_FAILURE;
     } catch (const std::ifstream::failure& e) {
         std::cerr << "Couldn't find file: " << argv[1] << std::endl;
-        return EXIT_FAILURE;
-    } catch (Diagnostics& d) {
-        std::cerr << "\nWarning: DON'T THROW DIAGNOSTICS\n\n" << d.out() << std::endl;
         return EXIT_FAILURE;
     } catch (const char* e) {
         std::cerr << "Warning: DON'T THROW STRINGS\n\t" << e << std::endl;

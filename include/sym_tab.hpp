@@ -1,8 +1,5 @@
 #pragma once
 
-#include "ast.hpp"
-#include "lexer.hpp"
-
 struct ASTDecl;
 struct Token;
 

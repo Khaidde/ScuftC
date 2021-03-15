@@ -3,6 +3,9 @@
 #include <iostream>
 #include <string>
 
+#include "diagnostics.hpp"
+#include "lexer.hpp"
+
 std::string nodeTypeToStr(NodeType type) {
     switch (type) {
         case NodeType::UNKNOWN:
@@ -24,37 +27,35 @@ std::string nodeTypeToStr(NodeType type) {
         case NodeType::RET:
             return "Return";
         case NodeType::DECL:
-            return "Decl";
+            return "Declaration";
         case NodeType::TYPE_LIT:
-            return "TypeLit";
+            return "Type Literal";
         case NodeType::FUNC_TYPE:
-            return "FunctionType";
+            return "Function Type";
         case NodeType::MOD:
             return "Module";
         case NodeType::TYPE_DEF:
-            return "TypeDef";
+            return "Type Definition";
         case NodeType::FUNC:
             return "Function";
         case NodeType::NAME:
             return "Name";
         case NodeType::DOT_OP:
-            return "DotOp";
+            return "Dot Operator";
         case NodeType::CALL:
             return "Call";
         case NodeType::TYPE_INIT:
-            return "TypeInit";
+            return "Type Initializer";
         case NodeType::LIT:
-            return "Lit";
+            return "Literal";
         case NodeType::UN_OP:
-            return "UnOp";
+            return "Unary Operator";
         case NodeType::DEREF:
-            return "Deref";
+            return "Dereference";
         case NodeType::BIN_OP:
-            return "BinOp";
+            return "Binary Operator";
     }
 }
-
-constexpr int DUMP_INDENT_LENGTH = 2;
 
 namespace {
 
@@ -383,7 +384,7 @@ std::string recurPrintAST(const ASTNode& node, int indentCt) {
             auto& decl = static_cast<const ASTDecl&>(node);
             str += recurPrintAST(*decl.lvalue, indentCt);
             if (decl.type != nullptr) {
-                str += ": " + recurPrintAST(*decl.type, indentCt);
+                str += ": " + printExpr(*decl.type);
             }
             if (decl.assignType != nullptr) {
                 str += " " + tokenTypeToStr(decl.assignType->type) + " ";
@@ -474,7 +475,7 @@ std::string printExpr(const ASTExpression& expr) {
                 }
             }
             return "mod {" + declListStr + "}";
-        } break;
+        }
         case NodeType::TYPE_DEF: {
             auto& typeDef = static_cast<const ASTTy&>(expr);
             std::string declListStr;
@@ -491,7 +492,7 @@ std::string printExpr(const ASTExpression& expr) {
                 }
             }
             return "ty {" + declListStr + "}";
-        } break;
+        }
         case NodeType::FUNC: {
             auto& func = static_cast<const ASTFunc&>(expr);
             std::string paramListStr;
@@ -508,7 +509,7 @@ std::string printExpr(const ASTExpression& expr) {
             }
         }
         case NodeType::NAME: {
-            return static_cast<const ASTName&>(expr).ref->toStr();
+            return static_cast<const ASTName&>(expr).ref->get_string_val();
         }
         case NodeType::DOT_OP: {
             auto& dotOp = static_cast<const ASTDotOp&>(expr);
@@ -516,7 +517,6 @@ std::string printExpr(const ASTExpression& expr) {
         }
         case NodeType::CALL: {
             auto& call = static_cast<const ASTCall&>(expr);
-            std::string argStr;
             str = printExpr(*call.callRef) + "(";
             for (int i = 0; i < call.arguments.size(); i++) {
                 str += printExpr(*call.arguments[i]);
@@ -547,7 +547,7 @@ std::string printExpr(const ASTExpression& expr) {
                 case TokenType::DOUBLE_LITERAL:
                     return std::to_string(lit.value->doubleVal);
                 case TokenType::STRING_LITERAL:
-                    return lit.value->toStr();
+                    return lit.value->get_string_val();
                 case TokenType::TRUE:
                     return "true";
                 case TokenType::FALSE:
@@ -569,6 +569,8 @@ std::string printExpr(const ASTExpression& expr) {
             return "(" + printExpr(*binOp.left) + " " + tokenTypeToStr(binOp.op->type) + " " + printExpr(*binOp.right) +
                    ")";
         }
+        case NodeType::UNKNOWN:
+            return "Unknown";
         default:
             ASSERT(false, "Node is not an expression");
     }

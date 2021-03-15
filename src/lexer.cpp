@@ -149,7 +149,7 @@ void Lexer::fromFilePath(const char* filePath) {
         file.read(&this->sourceStr[0], size);
 
         curIndex = 0;
-        curCLen = 0;
+        curCLen = 1;
     } else {
         throw std::ifstream::failure("File not found");
     }
@@ -158,12 +158,11 @@ void Lexer::fromFilePath(const char* filePath) {
 std::unique_ptr<Token> Lexer::makeToken(TokenType type) {
     auto tkn = std::make_unique<Token>();
     tkn->type = type;
-    tkn->index = curIndex;
-    tkn->cLen = curCLen;
-    tkn->src = &sourceStr;
+    tkn->beginI = curIndex;
+    tkn->endI = curIndex + curCLen;
 
     curIndex += curCLen;
-    curCLen = 0;
+    curCLen = 1;
     return tkn;
 }
 
@@ -173,16 +172,14 @@ std::unique_ptr<Token> Lexer::consumeToken() {
 
     if (curIndex >= sourceStr.length()) return makeToken(TokenType::END);
 
-    curCLen++;
     switch (sourceStr[curIndex]) {
         case ';':
             if (!Flags::dwSemiColons) {
-                DX->warn()
-                    .at("Semi-colons are not required in this language", curIndex)
-                    .note("Semi-colons are treated as whitespace. Use -dw-semi-colons to disable warning");
+                dx.err_loc("Semi-colons are not required in this language", curIndex)
+                    ->tag(ErrorMsg::WARNING)
+                    ->note("Semi-colons are treated as whitespace. Use -dw-semi-colons to disable warning");
             }
             curIndex++;
-            curCLen = 0;
             return consumeToken();
         case '{':
             return makeToken(TokenType::LEFT_CURLY);
@@ -289,7 +286,9 @@ std::unique_ptr<Token> Lexer::consumeToken() {
                 curCLen++;
                 return makeToken(TokenType::OP_MULT_EQUAL);
             } else if (isCursorChar('/')) {
-                panic(DX->err().at("Invalid closing of block comment", curIndex));
+                curCLen++;
+                dx.err_loc("Invalid closing of block comment", curIndex);
+                return makeToken(TokenType::UNKNOWN);
             } else {
                 return makeToken(TokenType::OP_MULT);
             }
@@ -302,7 +301,7 @@ std::unique_ptr<Token> Lexer::consumeToken() {
                     curIndex++;
                 }
                 curIndex++;
-                curCLen = 0;
+                curCLen = 1;
                 return consumeToken();
             } else if (isCursorChar('*')) {
                 while (curIndex + curCLen < sourceStr.length() &&
@@ -311,10 +310,11 @@ std::unique_ptr<Token> Lexer::consumeToken() {
                 }
                 curCLen++;
                 if (curIndex + curCLen > sourceStr.length()) {
-                    panic(DX->err().at("Unterminated block comment", curIndex));
+                    dx.err_loc("Unterminated block comment", curIndex);
+                    return makeToken(TokenType::UNKNOWN);
                 }
                 curIndex += curCLen;
-                curCLen = 0;
+                curCLen = 1;
                 return consumeToken();
             } else {
                 return makeToken(TokenType::OP_DIV);
@@ -337,9 +337,12 @@ std::unique_ptr<Token> Lexer::consumeToken() {
             }
             curCLen++;
             if (curIndex + curCLen > sourceStr.length()) {
-                panic(DX->err().at("Unterminated string literal", curIndex));
+                dx.err_loc("Unterminated string literal", curIndex);
+                return makeToken(TokenType::UNKNOWN);
             }
-            return makeToken(TokenType::STRING_LITERAL);
+            auto tkn = makeToken(TokenType::STRING_LITERAL);
+            tkn->sourceStr = &sourceStr;
+            return tkn;
         }
         default:
             if (isLetter(sourceStr[curIndex])) {
@@ -386,7 +389,9 @@ std::unique_ptr<Token> Lexer::consumeToken() {
                 } else if (keyword == "return") {
                     return makeToken(TokenType::RETURN);
                 } else {
-                    return makeToken(TokenType::IDENTIFIER);
+                    auto tkn = makeToken(TokenType::IDENTIFIER);
+                    tkn->sourceStr = &sourceStr;
+                    return tkn;
                 }
             } else if (isNumber(sourceStr[curIndex])) {
                 int base = 10;
@@ -412,12 +417,12 @@ std::unique_ptr<Token> Lexer::consumeToken() {
                     if (ch != '_') {
                         if (ch == '.') {
                             if (sourceStr[curIndex + curCLen - 1] == '_') {
-                                panic(DX->err().at("Underscore is not allowed here", curIndex + curCLen - 1));
+                                dx.err_loc("Underscore is not allowed here", curIndex + curCLen - 1);
                             }
                             if (divisor > 0) {
-                                panic(DX->err().at("Numeric literal has too many decimal points \"" +
-                                                       sourceStr.substr(curIndex, curCLen) + ".\"",
-                                                   curIndex + curCLen));
+                                dx.err_loc("Numeric literal has too many decimal points \"" +
+                                               sourceStr.substr(curIndex, curCLen) + ".\"",
+                                           curIndex + curCLen);
                             } else {
                                 divisor = 1;
                             }
@@ -445,24 +450,24 @@ std::unique_ptr<Token> Lexer::consumeToken() {
                                     if ((number > INT_MAX || number < 0) && !overflow) overflow = true;
                                 }
                             } else {
-                                panic(DX->err().at(std::to_string(toNum(ch)) + " is an invalid digit value in base " +
-                                                       std::to_string(base),
-                                                   curIndex + curCLen));
+                                dx.err_loc(std::to_string(toNum(ch)) + " is an invalid digit value in base " +
+                                               std::to_string(base),
+                                           curIndex + curCLen);
                             }
                         }
                     } else if (divisor == 1) {
-                        panic(DX->err().at("Underscore is not allowed here", curIndex + curCLen));
+                        dx.err_loc("Underscore is not allowed here", curIndex + curCLen);
                     }
                     curCLen++;
                     ch = sourceStr[curIndex + curCLen];
                 }
                 if (sourceStr[curIndex + curCLen - 1] == '_') {
-                    panic(DX->err().at("Underscore is not allowed here", curIndex + curCLen - 1));
+                    dx.err_loc("Underscore is not allowed here", curIndex + curCLen - 1);
                 }
                 if (overflow && divisor == 0) {
-                    DX->warn()
-                        .at("Numeric literal is too large to fit in an int ", curIndex, curCLen)
-                        .note("The max value for an int literal is 2^31-1 = 2_147_483_647");
+                    dx.err_loc("Numeric literal is too large to fit in an int ", curIndex, curIndex + curCLen)
+                        ->tag(ErrorMsg::WARNING)
+                        ->note("The max value for an int literal is 2^31-1 = 2_147_483_647");
                 }
 
                 if (divisor > 0) {
@@ -489,7 +494,7 @@ Token* Lexer::peekToken() {
 
 Token* Lexer::nextToken() {
     Token* token = peekToken();
-    cacheIndex++;
+    if (token->type != TokenType::END) cacheIndex++;
     return token;
 }
 

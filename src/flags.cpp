@@ -1,5 +1,8 @@
 #include "flags.hpp"
 
+#include <iostream>
+#include <string>
+
 namespace Flags {
 
 const char* filePath;

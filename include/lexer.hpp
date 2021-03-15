@@ -105,33 +105,30 @@ std::string tokenTypeToStr(TokenType type);
 struct Token {
     TokenType type;
 
-    int index;
-    int cLen;  // character length of the token
-    std::string* src;
+    int beginI;
+    int endI;
 
     union {
         long long longVal;
         double doubleVal;
+        std::string* sourceStr;
     };
 
-    inline std::string toStr() { return src->substr(index, cLen); }
+    inline std::string get_string_val() { return sourceStr->substr(beginI, endI - beginI); }
 };
-
-class Diagnostics;
 
 class Lexer {
     int curIndex = 0;
-    int curCLen = 0;
+    int curCLen = 1;
 
     int cacheIndex = 0;
     std::vector<std::unique_ptr<Token>> tokenCache;
 
    public:
-    Diagnostics* DX;
+    static constexpr size_t TAB_WIDTH = 4;
 
-    static const size_t TAB_WIDTH = 4;
-
-    Lexer(Diagnostics* diagnostics) : DX(diagnostics) { this->fromFilePath(Flags::filePath); }
+    Diagnostics dx;
+    Lexer() : dx(sourceStr) {}
 
     std::string sourceStr;
     void fromFilePath(const char* filePath);

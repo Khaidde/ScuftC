@@ -1,42 +1,47 @@
 #pragma once
 
+#include <memory>
+
 #include "ast.hpp"
-#include "flags.hpp"
+#include "diagnostics.hpp"
 #include "lexer.hpp"
 #include "sym_tab.hpp"
 
 class Parser {
     SymTable globalTable;
-    Lexer lexer;
 
     enum { LOWEST_PRECEDENCE = 0, HIGHEST_PRECEDENCE = 100 };
-    static int getPrecedence(TokenType type);
+    static int get_precedence(TokenType type);
 
-    // Returns whether or not the assertion was successful
-    bool assertToken(TokenType type, const std::string& msg = "");
-    inline bool checkToken(TokenType type) { return lexer.peekToken()->type == type; }
+    void assert_token(TokenType type, const std::string& msg = "");
+    inline bool check_token(TokenType type) { return lexer.peekToken()->type == type; }
 
-    std::unique_ptr<ASTNode> parseStatement();
-    std::unique_ptr<ASTBlock> parseBlock();
+    std::unique_ptr<ASTNode> parse_statement();
+    std::unique_ptr<ASTBlock> parse_block();
 
-    std::unique_ptr<ASTIf> parseIf();
-    std::unique_ptr<ASTWhile> parseWhile();
-    std::unique_ptr<ASTFor> parseFor();
+    std::unique_ptr<ASTIf> parse_if();
+    std::unique_ptr<ASTWhile> parse_while();
+    std::unique_ptr<ASTFor> parse_for();
 
-    std::unique_ptr<ASTDecl> assertParseDeclaration();
-    std::unique_ptr<ASTNode> parseDeclOrExpr();
+    std::unique_ptr<ASTRet> parse_return();
 
-    std::unique_ptr<ASTExpression> parseLeftParenExpression(int depth);
-    std::unique_ptr<ASTExpression> parseFunctionType(std::unique_ptr<ASTExpression> reduceExpr, int depth);
+    std::unique_ptr<ASTDecl> assert_parse_decl();
+    std::unique_ptr<ASTNode> parse_decl_expr();
 
-    std::unique_ptr<ASTExpression> parseExpression();
-    std::unique_ptr<ASTExpression> parseOperand(int depth);
-    std::unique_ptr<ASTExpression> recurExpression(int prec, int depth);
+    std::unique_ptr<ASTExpression> parse_left_paren_expr();
+    std::unique_ptr<ASTExpression> parse_function_type(std::unique_ptr<ASTExpression> reduceExpr);
+
+    int exprDepth = 0;
+    int unbalancedParenErrI = 0;
+    std::unique_ptr<ASTExpression> parse_expr();
+    std::unique_ptr<ASTExpression> parse_operand();
+    std::unique_ptr<ASTExpression> recur_expr(int prec);
 
    public:
-    Diagnostics DX;
+    Lexer lexer;
+    Diagnostics& dx;
 
-    explicit Parser() : lexer(&DX), DX(&lexer) {}
+    explicit Parser() : dx(lexer.dx) {}
 
-    std::unique_ptr<ASTProgram> parseProgram();
+    std::unique_ptr<ASTProgram> parse_program();
 };

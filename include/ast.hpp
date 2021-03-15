@@ -1,15 +1,13 @@
 #pragma once
 
 #include <memory>
+#include <string>
 #include <vector>
 
-#include "lexer.hpp"
 #include "sym_tab.hpp"
 
 enum class TokenType : unsigned char;
 struct Token;
-
-struct SymTable;
 
 enum class NodeType {
     UNKNOWN,
@@ -73,10 +71,18 @@ struct ASTDeref;
 struct ASTBinOp;
 
 template <class T>
-std::unique_ptr<T> makeNode(int index, int cLen = 1) {
+inline std::unique_ptr<T> make_node(const Token& tkn) {
     auto node = std::make_unique<T>();
-    node->locIndex = index;
-    node->endIndex = index + cLen;
+    node->beginI = tkn.beginI;
+    node->endI = tkn.endI;
+    return node;
+}
+
+template <class T>
+inline std::unique_ptr<T> make_node(const ASTNode& nodeLoc) {
+    auto node = std::make_unique<T>();
+    node->beginI = nodeLoc.beginI;
+    node->endI = nodeLoc.endI;
     return node;
 }
 
@@ -87,15 +93,17 @@ inline std::unique_ptr<T1> castNodePtr(std::unique_ptr<T2>& nodePtr) {
 
 struct ASTNode {
     NodeType nodeType;
-    int locIndex;
-    int endIndex;
+    int beginI;
+    int endI;
     explicit ASTNode(NodeType nodeType) : nodeType(nodeType) {}
 };
 
 template <class T>
-inline std::unique_ptr<T> unknownNode() {
+inline std::unique_ptr<T> unknownNode(int beginI, int endI) {
     auto unknown = std::make_unique<T>();
     unknown->nodeType = NodeType::UNKNOWN;
+    unknown->beginI = beginI;
+    unknown->endI = endI;
     return unknown;
 }
 
@@ -103,8 +111,6 @@ struct ASTExpression : ASTNode {
     explicit ASTExpression() : ASTNode(NodeType::UNKNOWN) {}
     explicit ASTExpression(NodeType nodeType) : ASTNode(nodeType) {}
 };
-
-inline std::unique_ptr<ASTExpression> unknownExpr() { return std::make_unique<ASTExpression>(NodeType::UNKNOWN); }
 
 struct ASTProgram : ASTNode {
     std::vector<std::unique_ptr<ASTDecl>> declarations;

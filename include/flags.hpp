@@ -1,7 +1,5 @@
 #pragma once
 
-#include <iostream>
-
 namespace Flags {
 
 extern const char* filePath;
@@ -17,4 +15,4 @@ extern bool dwSemiColons;  //-dw-semi-colons
 
 extern bool parseFlags(int argc, char** argv);
 
-};  // namespace Flags
+}  // namespace Flags

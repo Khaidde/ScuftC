@@ -38,8 +38,15 @@ x Think of a better way to deal with compiler flags and making them global
 - Parse function parameter as a declaration
 - Build diagnostics string in one cycle
 3/9/21
-- Format diagnostics indicator as the following:
+x Format diagnostics indicator as the following:
     3 + type {
     ^---------
     3 + 5 - 6 + 4
         ^---^
+- Switch to snake case for functions
+- Make free-floating expressions illegal: 3 + 5 should throw an error but doStuff(3, 4) should not
+3/14/21
+- Try to remove dependency on lexer.lastToken()
+- Consider moving parse_func_type into parse_left_paren_expr (make massive function)
+- Redesign "recover mode" in the diagnostics stuff
+- Delete while loops in favor of for loops

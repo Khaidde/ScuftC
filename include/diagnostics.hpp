@@ -1,15 +1,9 @@
 #pragma once
 
 #include <chrono>
-#include <stdexcept>
+#include <memory>
 #include <string>
-
-#include "ast.hpp"
-#include "flags.hpp"
-#include "lexer.hpp"
-
-struct Token;
-class Lexer;
+#include <vector>
 
 #ifndef NDEBUG
 #define ASSERT(assertion, errMsg)                                                                              \
@@ -25,48 +19,82 @@ class Lexer;
     } while (false)
 #endif
 
+static constexpr char TOTAL_DISPLAY_LINES = 3;
+
 struct ASTNode;
 
-struct Error {
-    const char* msg;
-    int locIndex;
-    int cLen;
-    inline Error(const char* msg) : msg(msg) {}
+struct Line {
+    int line;
+    int leading;
+    int beginI;
+    int endI;
+    Line* next;
 };
+
+struct ErrorMsg {
+    enum Tag { EMPTY, CONTEXT, ERROR, WARNING };
+    Tag infoTag = ERROR;
+
+    int beginI;
+    int endI;
+    int offset = 0;  // Used to offset "after indicator" one after the current indicator
+    const std::string msg;
+
+    std::string fixMsg;
+    std::string noteMsg;
+
+    // Error building temporary variables
+    int line;
+    int ch;  // column number - 1
+    int leading;
+    Line* lines[TOTAL_DISPLAY_LINES];
+    int maxNumLen;
+
+    inline ErrorMsg(std::string&& msg, int beginI, int endI) : msg(std::move(msg)), beginI(beginI), endI(endI) {}
+    inline ErrorMsg() {}
+
+    ErrorMsg* tag(Tag errTag) {
+        this->infoTag = errTag;
+        return this;
+    }
+    ErrorMsg* fix(const std::string&& fixMsg) {
+        this->fixMsg = std::move(fixMsg);
+        return this;
+    }
+    ErrorMsg* note(const std::string&& noteMsg) {
+        this->noteMsg = std::move(noteMsg);
+        return this;
+    }
+};
+
+struct Token;
 
 class Diagnostics {
-    static const char TOTAL_DISPLAY_LINES = 3;
-    static const char LINE_NUM_LEADING_WHITESPACE = 2;
-    static const char LINE_NUM_TRAILING_WHITESPACE = 3;
-
     std::chrono::high_resolution_clock::time_point start;
-    std::string msg;
-    Lexer* lexer;
+    std::vector<std::unique_ptr<ErrorMsg>> errors;
+    int maxIndex = 0;
 
-    // int warnings = 0;
-    int errorCount = 0;
-
-    std::vector<Error> errors;
-
-    Diagnostics& withIndicator(int col, int length, int leadingNumSpace);
+    std::vector<std::unique_ptr<ErrorMsg>> discardErrors;
+    bool isRecovering = false;  // Discard any errors thrown
 
    public:
-    Diagnostics(Lexer* lexer) : lexer(lexer) { start = std::chrono::high_resolution_clock::now(); }
+    const std::string& src;
 
-    Diagnostics& warn();
-    Diagnostics& err();
+    inline Diagnostics(const std::string& src) : src(src) { start = std::chrono::high_resolution_clock::now(); }
 
-    inline bool hasErrors() { return errorCount > 0; };
+    bool has_errors() { return !errors.empty(); }
 
-    Diagnostics& at(const std::string& appendMsg, int index, int indicatorLen = 1, bool useNewLine = false);
-    Diagnostics& at(const std::string& appendMsg, const Token& token);
-    Diagnostics& at(const std::string& appendMsg, const ASTNode& node);
-    Diagnostics& after(const std::string& appendMsg, const Token& token);
+    ErrorMsg* last_err();
+    inline void pop_last_err() { errors.pop_back(); }
+    inline void set_recover_mode(bool recover) { isRecovering = recover; };
 
-    Diagnostics& note(const std::string& appendMsg);
-    Diagnostics& fix(const std::string& appendMsg);
+    ErrorMsg* err_loc(std::string&& msg, int beginI, int endI);
+    ErrorMsg* err_loc(std::string&& msg, int beginI);
 
-    std::string out();
+    ErrorMsg* err_token(std::string&& msg, const Token& token);
+    ErrorMsg* err_after_token(std::string&& msg, const Token& token);
+
+    ErrorMsg* err_node(std::string&& msg, const ASTNode& node);
+
+    std::string emit();
 };
-
-[[noreturn]] inline void panic(Diagnostics& dx) { throw std::runtime_error(dx.out()); }

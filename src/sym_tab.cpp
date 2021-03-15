@@ -1,11 +1,14 @@
 #include "sym_tab.hpp"
 
+#include "lexer.hpp"
+
 namespace {
 
 int hash(const Token& identifier) {
-    const char* offset = identifier.src->c_str() + identifier.index;
+    const char* offset = identifier.sourceStr->c_str() + identifier.beginI;
     int hash = 0;
-    for (int i = 0; i < identifier.cLen; i++) {
+    int cLen = identifier.endI - identifier.beginI;
+    for (int i = 0; i < cLen; i++) {
         hash = hash * 31 + *(offset + i);
     }
     return (hash & 0x7fffffff) % SymTable::NUM_BUCKETS;
@@ -13,11 +16,13 @@ int hash(const Token& identifier) {
 
 // Compare the identifier names as present in the source file string
 bool cmpIdentifier(const Token& first, const Token& second) {
-    if (first.cLen != second.cLen) return false;
-    const char* firstStr = first.src->c_str() + first.index;
-    const char* secondStr = second.src->c_str() + second.index;
+    int firstCLen = first.endI - first.beginI;
+    int secondCLen = second.endI - second.beginI;
+    if (firstCLen != secondCLen) return false;
+    const char* firstStr = first.sourceStr->c_str() + first.beginI;
+    const char* secondStr = second.sourceStr->c_str() + second.beginI;
 
-    for (int i = 0; i < first.cLen; i++) {
+    for (int i = 0; i < firstCLen; i++) {
         if (firstStr[i] != secondStr[i]) return false;
     }
     return true;

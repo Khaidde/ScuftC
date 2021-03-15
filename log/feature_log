@@ -358,6 +358,32 @@
             doOtherStuff()
         }
 
+3/14/21 (Sunday)
+    - For loop syntax and removing while loops
+        // for [initial], [condition], [post] {}
+        for i = 0, i < 10, i++ {}
+
+        // for [condition], [post] {} 
+        i = 0
+        for i < 10, i++ {}
+
+        // for [condition] {}
+        for randVal == 1 {}
+
+        // Note that for [condition] {} is equivalent to while [condition] {}
+        // Remove while loops in favor of pure while loops
+    - For loop range syntax
+        // Note that [varName] #in_range [beginVal, endVal] translates roughly into (beginVal < i && i < endVal)
+        for i #in_range (0, 3] {}
+
+        // Also note that #in_range can be used as a standard expression
+        boolVal = 4 #in_range [-1, 3]
+
+        // Functionally equivalent to the following
+        boolVal = (-1 <= 4 && 4 <= 3)
+        
+        
+
 
 
 

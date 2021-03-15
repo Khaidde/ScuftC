@@ -1,140 +1,212 @@
 #include "diagnostics.hpp"
 
-#include <deque>
+#include <cmath>
+#include <stdexcept>
 
+#include "ast.hpp"
 #include "lexer.hpp"
 
-Diagnostics& Diagnostics::warn() {
-    msg += "\nWarning ";
-    // warnings++;
-    return *this;
+ErrorMsg* Diagnostics::last_err() {
+    ASSERT(!errors.empty(), "No last error was ever recorded");
+    return errors.back().get();
 }
 
-Diagnostics& Diagnostics::err() {
-    msg += "\nError ";
-    errorCount++;
-    return *this;
-}
+ErrorMsg* Diagnostics::err_loc(std::string&& msg, int beginI, int endI) {
+    ASSERT(endI > beginI, "Invalid error location(beginI = " + std::to_string(beginI) +
+                              ", endI = " + std::to_string(endI) + " ). End index must be greater than begin index");
+    if (endI > maxIndex) maxIndex = endI;
 
-Diagnostics& Diagnostics::withIndicator(int colLoc, int length, int leadingNumSpace) {
-    this->msg += std::string(LINE_NUM_LEADING_WHITESPACE + leadingNumSpace - 3, ' ');
-    this->msg += "...";
-    this->msg += std::string(LINE_NUM_TRAILING_WHITESPACE + colLoc, ' ');
-    this->msg += std::string(length, '^');
-    this->msg += "\n";
-    return *this;
-}
+    // Ignore duplicate errors at the same place
+    auto errorMsg = std::make_unique<ErrorMsg>(std::move(msg), beginI, endI);
 
-Diagnostics& Diagnostics::at(const std::string& appendMsg, int index, int indicatorLen, bool useNewLine) {
-    index = index < lexer->sourceStr.length() ? index : static_cast<int>(lexer->sourceStr.length() - 1);
-
-    struct SrcLine {
-        std::string strVal;
-        int beginCol;
-        int endCol;
-    };
-    std::deque<SrcLine> sourceLines;
-
-    int line = 1;
-    int col = 1;
-    int curI = 0;
-    while (curI <= index) {
-        std::string curStrLine;
-        int beginCol = 0;
-        int endCol = 0;
-        char ch = lexer->sourceStr[curI];
-        while (curI < lexer->sourceStr.length() && ch != '\n') {
-            if (!beginCol && !Lexer::isWhitespace(ch)) beginCol = col;
-            if (curI < index) {
-                if (ch == '\t') {
-                    col += Lexer::TAB_WIDTH;
-                } else {
-                    col++;
-                }
-            }
-            if (ch == '\t') {
-                curStrLine += std::string(Lexer::TAB_WIDTH, ' ');
-            } else {
-                curStrLine += ch;
-            }
-            curI++;
-            endCol++;
-            ch = lexer->sourceStr[curI];
-        }
-        if (useNewLine) endCol++;
-        if (sourceLines.size() >= TOTAL_DISPLAY_LINES) sourceLines.pop_front();
-        sourceLines.push_back({curStrLine, beginCol, endCol});
-        curStrLine = "";
-        if (useNewLine && curI == index) break;
-        if (curI <= index) {
-            line++;
-            col = 1;
-            curI++;
-        }
+    if (isRecovering) {
+        discardErrors.push_back(std::move(errorMsg));
+        return discardErrors.back().get();
+    } else {
+        errors.push_back(std::move(errorMsg));
+        return errors.back().get();
     }
-    this->msg += "(line:";
-    this->msg += std::to_string(line);
-    this->msg += ", col:";
-    this->msg += std::to_string(col);
-    this->msg += "): ";
-    this->msg += appendMsg;
-    this->msg += "\n";
-    int minBeginCol = sourceLines.back().beginCol;
-    for (const SrcLine& curLine : sourceLines) {
-        if (curLine.beginCol > 0 && curLine.beginCol < minBeginCol) minBeginCol = curLine.beginCol;
-    }
-    int lineNumStrLen = static_cast<int>(floor(log10(line + 1)) + 1);
-    int curLineNum = static_cast<int>(line - sourceLines.size());
-    for (const SrcLine& curLine : sourceLines) {
-        curLineNum++;
-        this->msg +=
-            std::string(LINE_NUM_LEADING_WHITESPACE + lineNumStrLen - std::to_string(curLineNum).length(), ' ');
-        this->msg += std::to_string(curLineNum);
-        this->msg += std::string(LINE_NUM_TRAILING_WHITESPACE, ' ');
-        if (curLine.beginCol > 0) this->msg += curLine.strVal.substr(minBeginCol - 1);
-        this->msg += "\n";
-    }
-    int lenOnLine = sourceLines.back().endCol - (col - 1);
-    if (indicatorLen < 0) indicatorLen = lenOnLine;
-    return this->withIndicator(col - minBeginCol, indicatorLen < lenOnLine ? indicatorLen : lenOnLine, lineNumStrLen);
 }
 
-Diagnostics& Diagnostics::at(const std::string& appendMsg, const Token& token) {
-    return this->at(appendMsg, token.index, token.cLen);
+ErrorMsg* Diagnostics::err_loc(std::string&& msg, int beginI) { return err_loc(std::move(msg), beginI, beginI + 1); }
+
+ErrorMsg* Diagnostics::err_token(std::string&& msg, const Token& token) {
+    return err_loc(std::move(msg), token.beginI, token.endI);
 }
 
-Diagnostics& Diagnostics::at(const std::string& appendMsg, const ASTNode& node) {
-    if (node.endIndex == 0) return this->at(appendMsg, node.locIndex);
-    return this->at(appendMsg, node.locIndex, node.endIndex - node.locIndex);
+ErrorMsg* Diagnostics::err_after_token(std::string&& msg, const Token& token) {
+    if (token.endI > maxIndex) maxIndex = token.endI;
+    auto errMsg = err_loc(std::move(msg), token.endI - 1, token.endI);
+    errMsg->offset = 1;
+    return errMsg;
 }
 
-Diagnostics& Diagnostics::after(const std::string& appendMsg, const Token& token) {
-    return this->at(appendMsg, token.index + token.cLen, 1, true);
+ErrorMsg* Diagnostics::err_node(std::string&& msg, const ASTNode& node) {
+    return err_loc(std::move(msg), node.beginI, node.endI);
 }
 
-Diagnostics& Diagnostics::note(const std::string& appendMsg) {
-    this->msg += std::string(LINE_NUM_LEADING_WHITESPACE, ' ');
-    this->msg += "note: ";
-    this->msg += appendMsg;
-    this->msg += "\n";
-    return *this;
-}
+namespace {
+constexpr char TAG_LEN = 6;
+constexpr char LINE_NUM_TRAILING_WHITESPACE = 3;
+constexpr int ELLIPSES_LEN = 3;
+constexpr char FIX_LEN = 7;
+constexpr char NOTE_LEN = 6;
 
-Diagnostics& Diagnostics::fix(const std::string& appendMsg) {
-    this->msg += std::string(LINE_NUM_LEADING_WHITESPACE, ' ');
-    this->msg += "fix: ";
-    this->msg += appendMsg;
-    this->msg += "\n";
-    return *this;
-}
+inline int strlenNum(int num) { return static_cast<int>(floor(log10(num)) + 1); }
+}  // namespace
 
-std::string Diagnostics::out() {
+std::string Diagnostics::emit() {
     auto end = std::chrono::steady_clock::now();
     std::chrono::duration<double, std::milli> diff = end - start;
-    if (errorCount > 0) {
-        msg += "\n-- " + std::to_string(errorCount) + " error";
-        if (errorCount > 1) msg += "s";
+    std::string finishTime = "\n-- Finished in " + std::to_string(diff.count()) + "ms";
+
+    int line = 1;
+    Line* lastLine = nullptr;
+    for (int c = 0; c <= maxIndex; c++) {
+        Line* l = new Line;
+        l->line = line++;
+        l->beginI = c;
+        l->leading = 0;
+        bool isLeading = true;
+        for (; c < src.length() && src[c] != '\n'; c++) {
+            if (isLeading && !Lexer::isWhitespace(src[c])) {
+                l->leading = c - l->beginI;
+                isLeading = false;
+            }
+        }
+        l->endI = c;
+        l->next = lastLine;
+        lastLine = l;
     }
-    // return msg + "\n-- Finished " + header + " in " + std::to_string(diff.count()) + "ms\n";
-    return msg + "\n-- Finished";
+
+    size_t size = 0;
+    ErrorMsg* lastErr = nullptr;
+    for (const auto& e : errors) {
+        size += e->msg.size() + 1;  // Add new line char
+        for (Line* l = lastLine; l != nullptr; l = l->next) {
+            if (e->beginI >= l->beginI) {
+                int ch = 0;
+                for (int i = l->beginI; i < e->beginI; i++) {
+                    ch += src[i] == '\t' ? Lexer::TAB_WIDTH : 1;
+                }
+                size += TAG_LEN;
+                size += 6;  // (line:
+                e->line = l->line;
+                size += strlenNum(e->line);
+                size += 6;  // , col:
+                e->ch = ch;
+                size += strlenNum(e->ch + 1 + e->offset);
+                size += 2;  // )
+
+                // Get minimum leading space
+                Line* b = l;
+                e->leading = l->leading;
+                for (int i = 0; i < TOTAL_DISPLAY_LINES && l != nullptr; i++) {
+                    if (l->leading < e->leading) e->leading = l->leading;
+                    l = l->next;
+                }
+
+                // Calculated new begin index after leading space adjustments
+                l = b;
+                e->maxNumLen = std::max(ELLIPSES_LEN, strlenNum(e->line));
+                for (int i = 0; i < TOTAL_DISPLAY_LINES && l != nullptr; i++) {
+                    size += TAG_LEN + e->maxNumLen + LINE_NUM_TRAILING_WHITESPACE;
+                    e->lines[i] = l;
+                    size += l->endI - l->beginI - e->leading;
+                    size += 1;  // Add new line char
+                    l = l->next;
+                }
+                size += TAG_LEN + e->maxNumLen;
+                size += LINE_NUM_TRAILING_WHITESPACE + e->ch - e->leading + e->offset;
+                size += std::min(e->lines[0]->endI, e->endI) - e->beginI;
+
+                if (!e->fixMsg.empty()) {
+                    size += FIX_LEN;
+                    size += e->fixMsg.size();
+                }
+                size += 1;  // Add new line char
+                if (!e->noteMsg.empty()) {
+                    size += TAG_LEN + e->maxNumLen;
+                    size += NOTE_LEN;
+                    size += e->noteMsg.size();
+                    size += 1;  // Add new line char
+                }
+                break;
+            }
+        }
+    }
+    size += finishTime.size();
+
+    std::string res;
+    res.reserve(size);
+    for (auto& e : errors) {
+        switch (e->infoTag) {
+            case ErrorMsg::EMPTY:
+                res += "------";
+                break;
+            case ErrorMsg::CONTEXT:
+                res += "   In:";
+                break;
+            case ErrorMsg::ERROR:
+                res += "Error:";
+                break;
+            case ErrorMsg::WARNING:
+                res += "Warn::";
+                break;
+        }
+        res += "(line:";
+        res += std::to_string(e->line);
+        res += ", col:";
+        res += std::to_string(e->ch + 1 + e->offset);
+        res += ") ";
+        res += e->msg;
+        res += "\n";
+        for (int i = TOTAL_DISPLAY_LINES - 1; i >= 0; i--) {
+            int lineNum = e->line - i;
+            if (lineNum <= 0) continue;
+
+            res += std::string(TAG_LEN, ' ');
+
+            res += std::string(e->maxNumLen - strlenNum(lineNum), ' ');
+            res += std::to_string(lineNum);
+            res += std::string(LINE_NUM_TRAILING_WHITESPACE, ' ');
+            res += src.substr(e->lines[i]->beginI + e->leading, e->lines[i]->endI - e->lines[i]->beginI - e->leading);
+            res += "\n";
+        }
+        res += std::string(TAG_LEN, ' ');
+        res += std::string(e->maxNumLen - ELLIPSES_LEN, ' ');
+        res += "...";
+        res += std::string(LINE_NUM_TRAILING_WHITESPACE + e->ch - e->leading + e->offset, ' ');
+        res += "^";
+        Line* errLine = e->lines[0];
+        if (e->endI > e->beginI + 1) {
+            if (e->endI > errLine->endI) {
+                res += std::string(errLine->endI - e->beginI - 1, '-');
+            } else {
+                res += std::string(e->endI - e->beginI - 2, '-');
+                res += "^";
+            }
+        }
+        if (!e->fixMsg.empty()) {
+            res += "  fix: ";
+            res += e->fixMsg;
+        }
+        res += "\n";
+        if (!e->noteMsg.empty()) {
+            res += std::string(TAG_LEN + e->maxNumLen, ' ');
+            res += "note: ";
+            res += e->noteMsg;
+            res += "\n";
+        }
+    }
+    res += finishTime;
+    ASSERT(res.size() == size, "Bad string size allocation");
+
+    Line* cur = lastLine;
+    while (cur != nullptr) {
+        Line* next = cur->next;
+        delete cur;
+        cur = next;
+    }
+    return res;
 }
