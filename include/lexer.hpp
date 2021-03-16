@@ -23,9 +23,7 @@ enum class TokenType : unsigned char {
     TY,   // particle = ty {}
     IF,
     ELSE,
-    WHILE,
     FOR,
-    IN,
     BREAK,
     CONTINUE,
 
@@ -100,7 +98,7 @@ enum class TokenType : unsigned char {
     END,
 };
 
-std::string tokenTypeToStr(TokenType type);
+std::string token_type_to_str(TokenType type);
 
 struct Token {
     TokenType type;
@@ -131,23 +129,23 @@ class Lexer {
     Lexer() : dx(sourceStr) {}
 
     std::string sourceStr;
-    void fromFilePath(const char* filePath);
+    void from_file_path(const char* filePath);
 
-    std::unique_ptr<Token> makeToken(TokenType type);
-    std::unique_ptr<Token> consumeToken();
+    std::unique_ptr<Token> make_token(TokenType type);
+    std::unique_ptr<Token> consume_token();
 
-    Token* peekToken();
-    Token* nextToken();
+    Token* peek_token();
+    Token* next_token();
 
-    Token* lastToken();
+    Token* last_token();
 
-    inline bool isCursorChar(char assertChar) { return sourceStr[curIndex + curCLen] == assertChar; }
+    inline bool is_cursor_char(char assertChar) { return sourceStr[curIndex + curCLen] == assertChar; }
 
-    static inline bool isWhitespace(char ch) { return ch == ' ' || ch == '\t' || ch == '\r' || ch == '\n'; }
-    static inline bool isLetter(char ch) {
+    static inline bool is_whitespace(char ch) { return ch == ' ' || ch == '\t' || ch == '\r' || ch == '\n'; }
+    static inline bool is_letter(char ch) {
         return (ch >= 65 && ch < 91) || (ch >= 97 && ch < 123) || ch == '\'' || ch == '_';
     }
-    static inline int toNum(char ch) { return ch - 48; }
-    static inline bool isNumber(char ch) { return (ch >= 48 && ch <= 57) || ch == '_'; }
-    static inline bool isHex(char ch) { return (ch >= 65 && ch < 71) || (ch >= 97 && ch < 103) || isNumber(ch); }
+    static inline int to_num(char ch) { return ch - 48; }
+    static inline bool is_number(char ch) { return (ch >= 48 && ch <= 57) || ch == '_'; }
+    static inline bool is_hex(char ch) { return (ch >= 65 && ch < 71) || (ch >= 97 && ch < 103) || is_number(ch); }
 };

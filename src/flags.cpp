@@ -12,7 +12,7 @@ bool sourceFmt = false;
 DumpInfo dumpInfo;
 bool dwSemiColons = false;  //-dw-semi-colons
 
-bool parseFlags(int argc, char** argv) {
+bool parse_flags(int argc, char** argv) {
     filePath = argv[1];
     for (int i = 2; i < argc; i++) {
         if (strcmp(argv[i], "-dump-ast") == 0) {

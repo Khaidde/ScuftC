@@ -52,7 +52,7 @@ constexpr int ELLIPSES_LEN = 3;
 constexpr char FIX_LEN = 7;
 constexpr char NOTE_LEN = 6;
 
-inline int strlenNum(int num) { return static_cast<int>(floor(log10(num)) + 1); }
+inline int strlen_num(int num) { return static_cast<int>(floor(log10(num)) + 1); }
 }  // namespace
 
 std::string Diagnostics::emit() {
@@ -69,7 +69,7 @@ std::string Diagnostics::emit() {
         l->leading = 0;
         bool isLeading = true;
         for (; c < src.length() && src[c] != '\n'; c++) {
-            if (isLeading && !Lexer::isWhitespace(src[c])) {
+            if (isLeading && !Lexer::is_whitespace(src[c])) {
                 l->leading = c - l->beginI;
                 isLeading = false;
             }
@@ -92,10 +92,10 @@ std::string Diagnostics::emit() {
                 size += TAG_LEN;
                 size += 6;  // (line:
                 e->line = l->line;
-                size += strlenNum(e->line);
+                size += strlen_num(e->line);
                 size += 6;  // , col:
                 e->ch = ch;
-                size += strlenNum(e->ch + 1 + e->offset);
+                size += strlen_num(e->ch + 1 + e->offset);
                 size += 2;  // )
 
                 // Get minimum leading space
@@ -108,7 +108,7 @@ std::string Diagnostics::emit() {
 
                 // Calculated new begin index after leading space adjustments
                 l = b;
-                e->maxNumLen = std::max(ELLIPSES_LEN, strlenNum(e->line));
+                e->maxNumLen = std::max(ELLIPSES_LEN, strlen_num(e->line));
                 for (int i = 0; i < TOTAL_DISPLAY_LINES && l != nullptr; i++) {
                     size += TAG_LEN + e->maxNumLen + LINE_NUM_TRAILING_WHITESPACE;
                     e->lines[i] = l;
@@ -167,7 +167,7 @@ std::string Diagnostics::emit() {
 
             res += std::string(TAG_LEN, ' ');
 
-            res += std::string(e->maxNumLen - strlenNum(lineNum), ' ');
+            res += std::string(e->maxNumLen - strlen_num(lineNum), ' ');
             res += std::to_string(lineNum);
             res += std::string(LINE_NUM_TRAILING_WHITESPACE, ' ');
             res += src.substr(e->lines[i]->beginI + e->leading, e->lines[i]->endI - e->lines[i]->beginI - e->leading);

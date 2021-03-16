@@ -1,12 +1,14 @@
+- TODO
+x IMPLEMENTED/RESOLVED
+v RESOLVED/UPDATED VERSION/NO LONGER APPLICABLE
+
 1/13/21 (Wednesday)
     Done
     - Transitioned over to C++
     - Configured CMake and clang to generate executables
     - Added executable "scft.exe" to the system path
     - Read in scft files using "scft [fileName.scft]"
-
 1/14/21 (Thursday)
-    Notes
     - More number types
         main = () {
             stdInteger: int = 2_147_483_647
@@ -15,7 +17,7 @@
             stdFloat: float = 3.14
             stdDouble: double = 3.1415926535
         }
-    - Try to create a semi-colon free language (Or maybe they can be optional)
+    x Try to create a semi-colon free language (Or maybe they can be optional)
         doStuff = (a: int) {
             return a * a
         }
@@ -46,9 +48,7 @@
             doStuff(20)
             doStuff(40) 
         }
-
-
-    - Blocks can act as statements
+    x Blocks can act as statements
         // running main leads to a console log of "10" and "11" with no errors
         main = () {
             {
@@ -58,8 +58,8 @@
             dup = 11
             sysout(dup)
         }
-    - Remove default function parameters (function parameters are no longer declarations)
-    - Remove default intialization values for type definitions
+    v Remove default function parameters (function parameters are no longer declarations)
+    v Remove default intialization values for type definitions
             Particle => type {
                 // x: mut int = 4 This line is not longer valid because default values are not allowed
                 x: int
@@ -67,7 +67,6 @@
                 id: mut int
             }
 1/15/21 (Friday)
-    Notes
     - Unsigned and signed types
         signedInt: int = 10
         // unsignedInt: uint = -10 //This line throws an error because uint is unsigned
@@ -75,7 +74,7 @@
         unsignedLong: ulong = 10
         // Note: unsigned float and double don't exist
         // Note: arithmetic shift right is no longer necessary (automatically done base on signedness)
-    - Mutability/Immutability/Const should be a property of the "variable" not the "value/type". This will help simplify a lot of things
+    v Mutability/Immutability/Const should be a property of the "variable" not the "value/type". This will help simplify a lot of things
         //The following could be a suitable alternative
         ~ x : int = 10    // mut variable
         x = 11          // this is valid because x is mutable
@@ -86,7 +85,7 @@
         z: int => 10
         val = z + 10 // This is valid
         z = 22       // This is not valid
-    - References
+    v References
         Point => type { 
             x: int 
             y: int
@@ -104,7 +103,7 @@
             sysout(newPoint.randFlag) //
             doStuff(newPoint)
         }
-    - Pass by value vs pass by reference
+    v Pass by value vs pass by reference
         doStuffInt = (i: int) {
             i = -1
         }
@@ -122,9 +121,7 @@
             doStuffPoint(pTest) //Point is passed by value and copied so there is no change to pTest
             doStuffPointRef(pTest) //pTest.x is now -1 because pTest is passed by reference 
         }
-
 1/16/21 (Saturday)
-    Notes
     - Use mut to declare mutable variables
         val = 100
         // val = 10 //This line is not valid cause val is immutable
@@ -154,14 +151,11 @@
 
         //list1 and list2 are equivalent
         list2 = "Fruit List\n- Apples\n- Orange\n- Banana"
-    
     Done    
     - Worked on error handling structure and exception handling
     - Lexer now reads everything except for multi-line comments and numeric literals
     - Multiline string literals work
-
 1/17/21 (Sunday)
-    Notes
     - Improved operator overloading syntax (Not finalized)
         Particle => type {
             x: int
@@ -192,14 +186,12 @@
             pointerToStack: *Particle = stackAllocated.*
             // copyOfPointerToStack = pointerToStack // For now, this is is invalid because pointers can't be copied
         }
-    - Change type construction "<-" back to "="
+    x Change type construction "<-" back to "="
         // Before, Particle.{ x = 4 } insinuated that x was immutably being defined to 4
         // However, with the new changes "mut x = 4" and "x = 4" both use the same assignment tokens
         // It now makes sense to go back to the original syntax
         p0 = Particle.{ x = 4, y = 3 }
-
 1/26/21 (Tuesday)
-    Notes
     - Revised mutability syntax
         // place mut after the variable so that variable names are all left-aligned
         counter mut: int = 3
@@ -214,9 +206,7 @@
         // yet ANOTHER alternative syntax 
         meaningOfLife ~: int = 3
         otherMeaning ~ = 4
-
 2/9/21 (Tuesday)
-    Notes
     - No type promotion for numeric types
         // Must explictly cast numeric type to perform arithmetic on them
         int a = 33
@@ -225,10 +215,8 @@
         // C/C++ as well as Java does type promotion but it seems like a code smell 
         // Note: in the long run it might be better to just implement type promotion but honestly, who knows
         // float c = a + b // This should throw an error
-
 2/14/21 (Sunday)
-    Notes
-    - New type definition syntax
+    v New type definition syntax
         // Aimed to avoid ambiguity when dealing with expressions like "if randomThing == type {}"
 
         // The idea is that you are "creating" a new type
@@ -254,9 +242,7 @@
 
             sysout(testCont.size) // This prints out "55" as expected
         }
-
 2/18/21 (Thursday)
-    Notes
     - Consider generalizing [typename].{}
         // [typename].{...} means create an instance of [typename] and 
         // use the block as if you were calling from within the type's scope
@@ -277,18 +263,18 @@
             x: int
             y: int
         }
-    - Semi-colons are considered whitespace
+    x Semi-colons are considered whitespace
         // Both statements are valid
         a: int = 4
         b: int = 5; 
 
         // Compiler flag to disable or enable warning output of semi-colons
         // Semi-colons should NOT be legal by default
-    - Consider adding mod as a type literal: testMod = mod.{...}  modType: mod = typeof(testMod)
-    - New syntax for one line function shorthand
+    x Consider adding mod as a type literal: testMod = mod.{...}  modType: mod = typeof(testMod)
+    v New syntax for one line function shorthand
         regular = (a: int, b: int) -> num return a + b
         shorthand = (a: int, b: int) => a + b
-    - Consider implicit return types
+    x Consider implicit return types
         funcTest = (a: int, b: int) return a + b  // Implicit return type of int
 
         // This function throws an error because of return type mismatch
@@ -299,7 +285,7 @@
                 return "value"
             }
         }
-    - Use ty and mod keyword to remove ambiguity
+    x Use ty and mod keyword to remove ambiguity
         Utils = mod {
             Point => ty {
                 x: int
@@ -314,9 +300,8 @@
                 y = 5
             }
         }
-
 3/7/21 (Sunday)
-    - Use :: to for function shortcut
+    x Use :: to for function shortcut
         add = (a: int, b: int) :: a + b
         three = () :: 3 
     - Labeled while loops
@@ -330,7 +315,7 @@
                 }
             }
         }
-    - Infinite for loop syntax
+    x Infinite for loop syntax
         mut i = 3
         for {
             i = i + 1
@@ -357,15 +342,12 @@
         {
             doOtherStuff()
         }
-
 3/14/21 (Sunday)
     - For loop syntax and removing while loops
         // for [initial], [condition], [post] {}
         for i = 0, i < 10, i++ {}
 
-        // for [condition], [post] {} 
-        i = 0
-        for i < 10, i++ {}
+        for i = 0, i < 10,_ {}
 
         // for [condition] {}
         for randVal == 1 {}
@@ -381,10 +363,115 @@
 
         // Functionally equivalent to the following
         boolVal = (-1 <= 4 && 4 <= 3)
-        
-        
+    v Underscore to denote a neglected value
+        // Disregard the post statement
+        for i = 0, i < 10, _ {
 
+        }
 
+        Particle => ty {
+            spin: int = _   // Note that declaration MUST specify type here
+            x: int          // By default, integers are initialized to 0
+            y: int
+        }
+        p: Particle // p.x is 0 but p.spin can be any abritrary signed int
+3/15/21 (Monday)
+    - Casting using typescript style brackets
+        x: int = 34
+        y: double = <int> x
 
+    - Traits (Ideas)
+        // Traits can only contain function declarations
+        Printable => trait(T: type) {
+            print: (t: *T) -> string
+        }
+        Cast => trait(T: type) {
+            cast: () -> T
+        }
 
+        // First syntax
+        Particle => ty {
+            x: int
+            y: int
+        } impl Printable {
+            // Note that code in the implement has a notion of "this"
+            print = () :: "Particle: [" + x + ", " + y + "]"
+        } impl Cast(int) {
+            cast = () -> int {
+                return x + y
+            } 
+        }
 
+        // Second syntax
+        Particle => ty {
+            impl Printable, To(int) {
+                print = () :: "Particle: [" + x + ", " + y + "]"
+                to = () :: x + y
+            }
+            x: int
+            y: int
+        }
+
+        p0: Particle
+        p0.print()
+    - Maybe types and underscores
+        Particle => ty { 
+            x: int 
+            y: int 
+        }
+
+        // p may or may not have an existing value at any given time
+        p: maybe Particle 
+        assert(p == _, "The default value of all maybe types is _ (empty value)")
+        // invalidVal = p.x // Throws an error stating that "p is empty and can't be accessed"
+
+        p = Particle.{ x = 3 y = 4 }
+        boolPExists = ?p // Question mark is used to query whether or not p has a value
+        if ?p {
+            validVal = p.x // Legal line
+        }
+
+        // _ can be assigned to a variable
+        val = _ //
+
+        sqrt => (a: int) -> maybe int {
+            // Can't sqrt negative numbers to produce an integer
+            if a < 0 return _ 
+
+            // code to calculate sqrt 
+            return sqrtVal
+        }
+    - Type "constructor" syntax
+        // Pseudo code for what int would hypothetically look like
+        int = ty {
+            int.DEFAULT = 0
+            impl Cast(double) {
+                cast = () -> double #extern
+            }
+        }
+        // Pseudo code for what the maybe type would hypothetically look like
+        maybe = ty(T: type) { 
+            impl Cast(T) {
+                cast = () -> T {
+                    if exists() return val
+                    return T.DEFAULT // Return the default value of the type
+                }
+            }
+            T val
+            exists: bool // equivalent to the ? operator on maybe types
+        }
+        Particle => ty (x0: maybe int, y0: maybe int) {
+            x: int = <int> x0
+            y: int = <int> y0 
+        }
+    - Extern directive to signify external definition/implementation
+        create_window: (w: int, h: int, title: string) -> void #extern
+        OS: string #extern // Name of operating system, could be replaced with some sort of enum
+    - Consider using camel case for primitive types
+        intValue: Int = 3
+        stringValue: String = "Value"
+
+        Particle = ty {
+            x: Double 
+            y: Double 
+        }

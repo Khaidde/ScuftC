@@ -13,6 +13,6 @@ extern bool sourceFmt;
 
 extern bool dwSemiColons;  //-dw-semi-colons
 
-extern bool parseFlags(int argc, char** argv);
+extern bool parse_flags(int argc, char** argv);
 
 }  // namespace Flags

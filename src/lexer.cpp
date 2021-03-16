@@ -4,8 +4,10 @@
 
 #include "flags.hpp"
 
-std::string tokenTypeToStr(TokenType type) {
+std::string token_type_to_str(TokenType type) {
     switch (type) {
+        case TokenType::UNKNOWN:
+            return "'unknown token'";
         case TokenType::LEFT_CURLY:
             return "{";
         case TokenType::RIGHT_CURLY:
@@ -22,12 +24,8 @@ std::string tokenTypeToStr(TokenType type) {
             return "if";
         case TokenType::ELSE:
             return "else";
-        case TokenType::WHILE:
-            return "while";
         case TokenType::FOR:
             return "for";
-        case TokenType::IN:
-            return "in";
         case TokenType::BREAK:
             return "break";
         case TokenType::CONTINUE:
@@ -135,11 +133,11 @@ std::string tokenTypeToStr(TokenType type) {
         case TokenType::END:
             return "end of file";
         default:
-            return "unknown token";
+            ASSERT(false, "Unknown token");
     }
 }
 
-void Lexer::fromFilePath(const char* filePath) {
+void Lexer::from_file_path(const char* filePath) {
     std::ifstream file(filePath);
     if (file.is_open()) {
         file.seekg(0, std::ios::end);
@@ -155,7 +153,7 @@ void Lexer::fromFilePath(const char* filePath) {
     }
 }
 
-std::unique_ptr<Token> Lexer::makeToken(TokenType type) {
+std::unique_ptr<Token> Lexer::make_token(TokenType type) {
     auto tkn = std::make_unique<Token>();
     tkn->type = type;
     tkn->beginI = curIndex;
@@ -166,11 +164,11 @@ std::unique_ptr<Token> Lexer::makeToken(TokenType type) {
     return tkn;
 }
 
-std::unique_ptr<Token> Lexer::consumeToken() {
+std::unique_ptr<Token> Lexer::consume_token() {
     // Skip over whitespace
-    while (curIndex < sourceStr.length() && isWhitespace(sourceStr[curIndex])) curIndex++;
+    while (curIndex < sourceStr.length() && is_whitespace(sourceStr[curIndex])) curIndex++;
 
-    if (curIndex >= sourceStr.length()) return makeToken(TokenType::END);
+    if (curIndex >= sourceStr.length()) return make_token(TokenType::END);
 
     switch (sourceStr[curIndex]) {
         case ';':
@@ -180,229 +178,232 @@ std::unique_ptr<Token> Lexer::consumeToken() {
                     ->note("Semi-colons are treated as whitespace. Use -dw-semi-colons to disable warning");
             }
             curIndex++;
-            return consumeToken();
+            return consume_token();
         case '{':
-            return makeToken(TokenType::LEFT_CURLY);
+            return make_token(TokenType::LEFT_CURLY);
         case '}':
-            return makeToken(TokenType::RIGHT_CURLY);
+            return make_token(TokenType::RIGHT_CURLY);
         case '(':
-            return makeToken(TokenType::LEFT_PARENS);
+            return make_token(TokenType::LEFT_PARENS);
         case ')':
-            return makeToken(TokenType::RIGHT_PARENS);
+            return make_token(TokenType::RIGHT_PARENS);
         case ':':
-            if (isCursorChar(':')) {
+            if (is_cursor_char(':')) {
                 curCLen++;
-                return makeToken(TokenType::SINGLE_RETURN);
+                return make_token(TokenType::SINGLE_RETURN);
             } else {
-                return makeToken(TokenType::COLON);
+                return make_token(TokenType::COLON);
             }
         case '=':
-            if (isCursorChar('>')) {
+            if (is_cursor_char('>')) {
                 curCLen++;
-                return makeToken(TokenType::CONST_ASSIGNMENT);
+                return make_token(TokenType::CONST_ASSIGNMENT);
+            } else if (is_cursor_char('=')) {
+                curCLen++;
+                return make_token(TokenType::COND_EQUALS);
             } else {
-                return makeToken(TokenType::ASSIGNMENT);
+                return make_token(TokenType::ASSIGNMENT);
             }
         case '!':
-            if (isCursorChar('=')) {
+            if (is_cursor_char('=')) {
                 curCLen++;
-                return makeToken(TokenType::COND_NOT_EQUALS);
+                return make_token(TokenType::COND_NOT_EQUALS);
             } else {
-                return makeToken(TokenType::COND_NOT);
+                return make_token(TokenType::COND_NOT);
             }
         case '|':
-            if (isCursorChar('|')) {
+            if (is_cursor_char('|')) {
                 curCLen++;
-                return makeToken(TokenType::COND_OR);
+                return make_token(TokenType::COND_OR);
             } else {
-                return makeToken(TokenType::BIT_OR);
+                return make_token(TokenType::BIT_OR);
             }
         case '&':
-            if (isCursorChar('&')) {
+            if (is_cursor_char('&')) {
                 curCLen++;
-                return makeToken(TokenType::COND_AND);
+                return make_token(TokenType::COND_AND);
             } else {
-                return makeToken(TokenType::BIT_AND);
+                return make_token(TokenType::BIT_AND);
             }
         case '$':
-            if (isCursorChar('$')) {
+            if (is_cursor_char('$')) {
                 curCLen++;
-                return makeToken(TokenType::COND_XOR);
+                return make_token(TokenType::COND_XOR);
             } else {
-                return makeToken(TokenType::BIT_XOR);
+                return make_token(TokenType::BIT_XOR);
             }
         case '<':
-            if (isCursorChar('=')) {
+            if (is_cursor_char('=')) {
                 curCLen++;
-                return makeToken(TokenType::COND_LESS_EQUAL);
-            } else if (isCursorChar('<')) {
+                return make_token(TokenType::COND_LESS_EQUAL);
+            } else if (is_cursor_char('<')) {
                 curCLen++;
-                return makeToken(TokenType::BIT_SHIFT_LEFT);
+                return make_token(TokenType::BIT_SHIFT_LEFT);
             } else {
-                return makeToken(TokenType::COND_LESS);
+                return make_token(TokenType::COND_LESS);
             }
         case '>':
-            if (isCursorChar('=')) {
+            if (is_cursor_char('=')) {
                 curCLen++;
-                return makeToken(TokenType::COND_GREATER_EQUAL);
-            } else if (isCursorChar('>')) {
+                return make_token(TokenType::COND_GREATER_EQUAL);
+            } else if (is_cursor_char('>')) {
                 curCLen++;
-                return makeToken(TokenType::BIT_SHIFT_RIGHT);
+                return make_token(TokenType::BIT_SHIFT_RIGHT);
             } else {
-                return makeToken(TokenType::COND_GREATER);
+                return make_token(TokenType::COND_GREATER);
             }
         case '.':
-            if (isCursorChar('*')) {
+            if (is_cursor_char('*')) {
                 curCLen++;
-                return makeToken(TokenType::DEREF);
+                return make_token(TokenType::DEREF);
             } else {
-                return makeToken(TokenType::DOT);
+                return make_token(TokenType::DOT);
             }
         case '+':
-            if (isCursorChar('=')) {
+            if (is_cursor_char('=')) {
                 curCLen++;
-                return makeToken(TokenType::OP_ADD_EQUAL);
-            } else if (isCursorChar('+')) {
+                return make_token(TokenType::OP_ADD_EQUAL);
+            } else if (is_cursor_char('+')) {
                 curCLen++;
-                return makeToken(TokenType::OP_ADD_ADD);
+                return make_token(TokenType::OP_ADD_ADD);
             } else {
-                return makeToken(TokenType::OP_ADD);
+                return make_token(TokenType::OP_ADD);
             }
         case '-':
-            if (isCursorChar('=')) {
+            if (is_cursor_char('=')) {
                 curCLen++;
-                return makeToken(TokenType::OP_SUBTR_EQUAL);
-            } else if (isCursorChar('-')) {
+                return make_token(TokenType::OP_SUBTR_EQUAL);
+            } else if (is_cursor_char('-')) {
                 curCLen++;
-                return makeToken(TokenType::OP_SUBTR_SUBTR);
-            } else if (isCursorChar('>')) {
+                return make_token(TokenType::OP_SUBTR_SUBTR);
+            } else if (is_cursor_char('>')) {
                 curCLen++;
-                return makeToken(TokenType::ARROW);
+                return make_token(TokenType::ARROW);
             } else {
-                return makeToken(TokenType::OP_SUBTR);
+                return make_token(TokenType::OP_SUBTR);
             }
         case '*':
-            if (isCursorChar('*')) {
+            if (is_cursor_char('*')) {
                 curCLen++;
-                return makeToken(TokenType::OP_MULT_EQUAL);
-            } else if (isCursorChar('/')) {
+                return make_token(TokenType::OP_MULT_EQUAL);
+            } else if (is_cursor_char('/')) {
                 curCLen++;
                 dx.err_loc("Invalid closing of block comment", curIndex);
-                return makeToken(TokenType::UNKNOWN);
+                return make_token(TokenType::UNKNOWN);
             } else {
-                return makeToken(TokenType::OP_MULT);
+                return make_token(TokenType::OP_MULT);
             }
         case '/':
-            if (isCursorChar('=')) {
+            if (is_cursor_char('=')) {
                 curCLen++;
-                return makeToken(TokenType::OP_DIV_EQUAL);
-            } else if (isCursorChar('/')) {
+                return make_token(TokenType::OP_DIV_EQUAL);
+            } else if (is_cursor_char('/')) {
                 while (curIndex < sourceStr.length() && sourceStr[curIndex] != '\n') {
                     curIndex++;
                 }
                 curIndex++;
                 curCLen = 1;
-                return consumeToken();
-            } else if (isCursorChar('*')) {
+                return consume_token();
+            } else if (is_cursor_char('*')) {
                 while (curIndex + curCLen < sourceStr.length() &&
-                       !(sourceStr[curIndex + curCLen - 1] == '*' && isCursorChar('/'))) {
+                       !(sourceStr[curIndex + curCLen - 1] == '*' && is_cursor_char('/'))) {
                     curCLen++;
                 }
                 curCLen++;
                 if (curIndex + curCLen > sourceStr.length()) {
                     dx.err_loc("Unterminated block comment", curIndex);
-                    return makeToken(TokenType::UNKNOWN);
+                    return make_token(TokenType::UNKNOWN);
                 }
                 curIndex += curCLen;
                 curCLen = 1;
-                return consumeToken();
+                return consume_token();
             } else {
-                return makeToken(TokenType::OP_DIV);
+                return make_token(TokenType::OP_DIV);
             }
         case '%':
-            if (isCursorChar('=')) {
+            if (is_cursor_char('=')) {
                 curCLen++;
-                return makeToken(TokenType::OP_MOD_EQUAL);
+                return make_token(TokenType::OP_MOD_EQUAL);
             } else {
-                return makeToken(TokenType::OP_MOD);
+                return make_token(TokenType::OP_MOD);
             }
         case '^':
-            return makeToken(TokenType::OP_CARROT);
+            return make_token(TokenType::OP_CARROT);
         case ',':
-            return makeToken(TokenType::COMMA);
+            return make_token(TokenType::COMMA);
         case '"': {
-            while (curIndex + curCLen < sourceStr.length() && !isCursorChar('"')) {
-                if (isCursorChar('\\')) curCLen++;
+            while (curIndex + curCLen < sourceStr.length() && !is_cursor_char('"')) {
+                if (is_cursor_char('\\')) curCLen++;
                 curCLen++;
             }
             curCLen++;
             if (curIndex + curCLen > sourceStr.length()) {
                 dx.err_loc("Unterminated string literal", curIndex);
-                return makeToken(TokenType::UNKNOWN);
+                return make_token(TokenType::UNKNOWN);
             }
-            auto tkn = makeToken(TokenType::STRING_LITERAL);
+            auto tkn = make_token(TokenType::STRING_LITERAL);
             tkn->sourceStr = &sourceStr;
             return tkn;
         }
         default:
-            if (isLetter(sourceStr[curIndex])) {
-                while (isLetter(sourceStr[curIndex + curCLen]) || isNumber(sourceStr[curIndex + curCLen])) {
+            if (is_letter(sourceStr[curIndex])) {
+                while (is_letter(sourceStr[curIndex + curCLen]) || is_number(sourceStr[curIndex + curCLen])) {
                     curCLen++;
                 }
                 std::string_view keyword(sourceStr.c_str() + curIndex, curCLen);
                 if (keyword == "mod") {
-                    return makeToken(TokenType::MOD);
+                    return make_token(TokenType::MOD);
                 } else if (keyword == "ty") {
-                    return makeToken(TokenType::TY);
+                    return make_token(TokenType::TY);
                 } else if (keyword == "if") {
-                    return makeToken(TokenType::IF);
+                    return make_token(TokenType::IF);
                 } else if (keyword == "else") {
-                    return makeToken(TokenType::ELSE);
-                } else if (keyword == "while") {
-                    return makeToken(TokenType::WHILE);
+                    return make_token(TokenType::ELSE);
                 } else if (keyword == "for") {
-                    return makeToken(TokenType::FOR);
-                } else if (keyword == "in") {
-                    return makeToken(TokenType::IN);
+                    return make_token(TokenType::FOR);
+                } else if (keyword == "while") {
+                    dx.err_loc("While loops are not allowed in this language", curIndex, curIndex + curCLen)
+                        ->fix("Use for loop instead in the form: for [condition] {}")
+                        ->note("Using 'while' as a variable name can cause confusion with other languages");
                 } else if (keyword == "break") {
-                    return makeToken(TokenType::BREAK);
+                    return make_token(TokenType::BREAK);
                 } else if (keyword == "continue") {
-                    return makeToken(TokenType::CONTINUE);
+                    return make_token(TokenType::CONTINUE);
                 } else if (keyword == "true") {
-                    return makeToken(TokenType::TRUE);
+                    return make_token(TokenType::TRUE);
                 } else if (keyword == "false") {
-                    return makeToken(TokenType::FALSE);
+                    return make_token(TokenType::FALSE);
                 } else if (keyword == "void") {
-                    return makeToken(TokenType::VOID_TYPE);
+                    return make_token(TokenType::VOID_TYPE);
                 } else if (keyword == "module") {
-                    return makeToken(TokenType::MOD_TYPE);
+                    return make_token(TokenType::MOD_TYPE);
                 } else if (keyword == "type") {
-                    return makeToken(TokenType::TY_TYPE);
+                    return make_token(TokenType::TY_TYPE);
                 } else if (keyword == "int") {
-                    return makeToken(TokenType::INT_TYPE);
+                    return make_token(TokenType::INT_TYPE);
                 } else if (keyword == "double") {
-                    return makeToken(TokenType::DOUBLE_TYPE);
+                    return make_token(TokenType::DOUBLE_TYPE);
                 } else if (keyword == "string") {
-                    return makeToken(TokenType::STRING_TYPE);
+                    return make_token(TokenType::STRING_TYPE);
                 } else if (keyword == "bool") {
-                    return makeToken(TokenType::BOOL_TYPE);
+                    return make_token(TokenType::BOOL_TYPE);
                 } else if (keyword == "return") {
-                    return makeToken(TokenType::RETURN);
+                    return make_token(TokenType::RETURN);
                 } else {
-                    auto tkn = makeToken(TokenType::IDENTIFIER);
+                    auto tkn = make_token(TokenType::IDENTIFIER);
                     tkn->sourceStr = &sourceStr;
                     return tkn;
                 }
-            } else if (isNumber(sourceStr[curIndex])) {
+            } else if (is_number(sourceStr[curIndex])) {
                 int base = 10;
                 if (sourceStr[curIndex] == '0') {
-                    if (isCursorChar('b')) {
+                    if (is_cursor_char('b')) {
                         base = 2;
                         curCLen++;
-                    } else if (isCursorChar('o')) {
+                    } else if (is_cursor_char('o')) {
                         base = 8;
                         curCLen++;
-                    } else if (isCursorChar('x')) {
+                    } else if (is_cursor_char('x')) {
                         base = 16;
                         curCLen++;
                     }
@@ -413,7 +414,7 @@ std::unique_ptr<Token> Lexer::consumeToken() {
                 long long number = 0;
                 double divisor = 0;
                 char ch = sourceStr[curIndex + curCLen];
-                while ((base == 16 && isHex(ch)) || isNumber(ch) || ch == '.') {
+                while ((base == 16 && is_hex(ch)) || is_number(ch) || ch == '.') {
                     if (ch != '_') {
                         if (ch == '.') {
                             if (sourceStr[curIndex + curCLen - 1] == '_') {
@@ -429,9 +430,9 @@ std::unique_ptr<Token> Lexer::consumeToken() {
                         } else {
                             // Convert digit into corresponding base: (in hexadecimal) A -> 10
                             int val;
-                            if (toNum(ch) >= 0 && toNum(ch) < 10) {
-                                val = toNum(ch);
-                            } else if (isHex(ch)) {
+                            if (to_num(ch) >= 0 && to_num(ch) < 10) {
+                                val = to_num(ch);
+                            } else if (is_hex(ch)) {
                                 val = ch - 65 + 10;
                                 if (val > 15) {
                                     val -= (97 - 65);
@@ -450,7 +451,7 @@ std::unique_ptr<Token> Lexer::consumeToken() {
                                     if ((number > INT_MAX || number < 0) && !overflow) overflow = true;
                                 }
                             } else {
-                                dx.err_loc(std::to_string(toNum(ch)) + " is an invalid digit value in base " +
+                                dx.err_loc(std::to_string(to_num(ch)) + " is an invalid digit value in base " +
                                                std::to_string(base),
                                            curIndex + curCLen);
                             }
@@ -472,33 +473,33 @@ std::unique_ptr<Token> Lexer::consumeToken() {
 
                 if (divisor > 0) {
                     // TODO make sure there is no precision loss
-                    auto tkn = makeToken(TokenType::DOUBLE_LITERAL);
+                    auto tkn = make_token(TokenType::DOUBLE_LITERAL);
                     tkn->doubleVal = static_cast<double>(number) / divisor;
                     return tkn;
                 } else {
-                    auto tkn = makeToken(TokenType::INT_LITERAL);
+                    auto tkn = make_token(TokenType::INT_LITERAL);
                     tkn->longVal = number;
                     return tkn;
                 }
             }
-            return makeToken(TokenType::UNKNOWN);
+            return make_token(TokenType::UNKNOWN);
     }
 }
 
-Token* Lexer::peekToken() {
+Token* Lexer::peek_token() {
     if (cacheIndex >= tokenCache.size()) {
-        tokenCache.push_back(consumeToken());
+        tokenCache.push_back(consume_token());
     }
     return tokenCache.at(cacheIndex).get();
 }
 
-Token* Lexer::nextToken() {
-    Token* token = peekToken();
+Token* Lexer::next_token() {
+    Token* token = peek_token();
     if (token->type != TokenType::END) cacheIndex++;
     return token;
 }
 
-Token* Lexer::lastToken() {
+Token* Lexer::last_token() {
     ASSERT(cacheIndex > 0, "Can't get last token of the first token in the file.");
     return tokenCache.at(cacheIndex - 1).get();
 }

@@ -1,8 +1,12 @@
 // Code which triggers syntactic compiler errors
 
+// Lexer warnings/errors
+// a = 1237498721947932749732947
+// a = 3;
+// while true {} // While loops are not allowed in this language
+
 // --- parse_program
 // if true {} // If statement is not allowed here
-// while true {} // While loop is not allowed here 
 // for {} // For loop is not allowed here 
 // break // break is not allowed here
 // continue // continue is not allowed here
@@ -10,10 +14,10 @@
 // 123 + 3 // [Expression] is not allowed here 
 
 // --- parse_statement
-// stmt = () { for { break 3 + 5 } } // Unreachable statement following break
-// stmt = () { while 1 { continue stmt() } } // Unreachable statement following continue 
+// stmt = () { for i < 2 { break 3 + 5 } } // Unreachable statement following break
+// stmt = () { for { continue stmt() } } // Unreachable statement following continue 
 // stmt = () { doStuff() return 3 doOther() } // Unreachable statement following return 
-// stmt = () { if true {} if 2 + 3 else doStuff() } // Expected a statement keyword like if, while, for, etc
+// stmt = () { if true {} if 2 + 3 else doStuff() } // Expected a statement keyword like if, for, etc
 
 // --- parse_block
 // block = () { doStuff() // Mismatched curl brackets. Start of block found here
@@ -22,11 +26,18 @@
 // ifStmt = () { if 2 + 3 {} else if 1 {} else // Unterminated code at end of file. Expected if keyword or {
 
 // --- parse_for
-// TODO
+// forLoop = () { for , i < 3, i++ {} } // Expected a statement
+// forLoop = () { for i = 0, { a = 3 }, i++ {} } // Conditional expression can't be a block
+// forLoop = () { for i = 0, if, i < 3 {} } // For loop condition must be an expression
+// forLoop = () { for i = 0, i < 3, { a = 3 } {} } // Block statement is not allowed after the conditional expression
+// forLoop = () { for i = 0, i < 3 {} } // Expected another statement after the condition
+// forLoop = () { for i = 0, i < 20 i++ {} } // Expected a comma after the conditional
+// forLoop = () { for i = 0, i = 20, i++ {} } // Replace = with ==
+// forLoop = () { for a = 10 {} } // For loop condition must be an expression
+// forLoop = () { for i = 10 if {} } // Expected a comma after the initial statement  
 
 // --- assert_parse_decl
 // See parse_program
-a = 1237498721947932749732947
 
 // --- parse_function (parse_left_paren_expr)
 // funcExpr = (a: string, if, 3 + 4) {} // Function parameter must declare a variable 

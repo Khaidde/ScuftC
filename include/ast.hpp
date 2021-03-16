@@ -9,14 +9,13 @@
 enum class TokenType : unsigned char;
 struct Token;
 
-enum class NodeType {
+enum class NodeType : unsigned char {
     UNKNOWN,
 
     PROGRAM,
     BLOCK,
 
     IF,
-    WHILE,
     FOR,
     BREAK,
     CONT,
@@ -43,14 +42,15 @@ enum class NodeType {
     BIN_OP
 };
 
-std::string nodeTypeToStr(NodeType type);
+std::string node_type_to_str(NodeType type);
+
+inline bool is_expression_type(NodeType nodeType) { return nodeType >= NodeType::TYPE_LIT; }
 
 struct ASTNode;
 struct ASTExpression;
 struct ASTProgram;
 struct ASTBlock;
 struct ASTIF;
-struct ASTWhile;
 struct ASTFor;
 struct ASTBreak;
 struct ASTCont;
@@ -61,6 +61,7 @@ struct ASTFuncType;
 struct ASTMod;
 struct ASTTy;
 struct ASTFunc;
+struct ASTEmpty;
 struct ASTName;
 struct ASTDotOp;
 struct ASTCall;
@@ -87,7 +88,7 @@ inline std::unique_ptr<T> make_node(const ASTNode& nodeLoc) {
 }
 
 template <class T1, class T2>
-inline std::unique_ptr<T1> castNodePtr(std::unique_ptr<T2>& nodePtr) {
+inline std::unique_ptr<T1> cast_node_ptr(std::unique_ptr<T2>& nodePtr) {
     return std::unique_ptr<T1>(static_cast<T1*>(nodePtr.release()));
 }
 
@@ -99,7 +100,7 @@ struct ASTNode {
 };
 
 template <class T>
-inline std::unique_ptr<T> unknownNode(int beginI, int endI) {
+inline std::unique_ptr<T> unknown_node(int beginI, int endI) {
     auto unknown = std::make_unique<T>();
     unknown->nodeType = NodeType::UNKNOWN;
     unknown->beginI = beginI;
@@ -130,14 +131,11 @@ struct ASTIf : ASTNode {
     ASTIf() : ASTNode(NodeType::IF) {}
 };
 
-struct ASTWhile : ASTNode {
-    std::unique_ptr<ASTExpression> condition;
-    std::unique_ptr<ASTNode> blockStmt;
-    ASTWhile() : ASTNode(NodeType::WHILE) {}
-};
-
 struct ASTFor : ASTNode {
-    // TODO for loop needs to be more concretely defined
+    std::unique_ptr<ASTNode> initial;
+    std::unique_ptr<ASTExpression> condition;
+    std::unique_ptr<ASTNode> post;
+
     std::unique_ptr<ASTNode> blockStmt;
     ASTFor() : ASTNode(NodeType::FOR) {}
 };
@@ -238,7 +236,7 @@ struct ASTBinOp : ASTExpression {
     ASTBinOp() : ASTExpression(NodeType::BIN_OP) {}
 };
 
-void dumpAST(const ASTNode& node, bool verbose);
+void dump_ast(const ASTNode& node, bool verbose);
 
-std::string printExpr(const ASTExpression& expr);
-std::string printAST(const ASTNode& node);
+std::string print_expr(const ASTExpression& expr);
+std::string print_ast(const ASTNode& node);

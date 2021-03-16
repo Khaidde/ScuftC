@@ -15,7 +15,7 @@ int hash(const Token& identifier) {
 }
 
 // Compare the identifier names as present in the source file string
-bool cmpIdentifier(const Token& first, const Token& second) {
+bool cmp_identifier(const Token& first, const Token& second) {
     int firstCLen = first.endI - first.beginI;
     int secondCLen = second.endI - second.beginI;
     if (firstCLen != secondCLen) return false;
@@ -43,11 +43,9 @@ void SymTable::insert(Token* identifier, ASTDecl* decl) {
 }
 
 TableEntry* SymTable::find(Token* identifier) {
-    int searchIndex = hash(*identifier);
-
-    TableEntry* chain = table[searchIndex];
+    TableEntry* chain = table[hash(*identifier)];
     while (chain != nullptr) {
-        if (cmpIdentifier(*chain->identifier, *identifier)) return chain;
+        if (cmp_identifier(*chain->identifier, *identifier)) return chain;
         chain = chain->next;
     }
     return nullptr;

@@ -18,6 +18,12 @@
     thing.that = 3
     strCool: string
     testFunc = (a: int, thing: ty {}) {
+      while true {
+
+      }
+
+      for i = 0, { a = 3 }
+
       testThing = 123
       return 123 
        

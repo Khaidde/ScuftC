@@ -14,13 +14,12 @@ class Parser {
     static int get_precedence(TokenType type);
 
     void assert_token(TokenType type, const std::string& msg = "");
-    inline bool check_token(TokenType type) { return lexer.peekToken()->type == type; }
+    inline bool check_token(TokenType type) { return lexer.peek_token()->type == type; }
 
     std::unique_ptr<ASTNode> parse_statement();
     std::unique_ptr<ASTBlock> parse_block();
 
     std::unique_ptr<ASTIf> parse_if();
-    std::unique_ptr<ASTWhile> parse_while();
     std::unique_ptr<ASTFor> parse_for();
 
     std::unique_ptr<ASTRet> parse_return();
