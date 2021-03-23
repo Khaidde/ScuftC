@@ -1,0 +1,26 @@
+// File automatically loaded into any program
+
+Default = trait() {
+    default: () -> #type this
+}
+
+OpAdd = trait(rightType: type) {
+    add: (rightType) -> #type this 
+}
+
+Int = ty {
+    impl OpAdd(Int) {
+        add: (Int) -> #type this #extern
+    }
+    impl Default {
+        default = () :: 0
+    }
+}
+
+Bool = ty {
+    // ...
+}
+
+String = ty {
+    // ...
+}

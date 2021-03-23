@@ -5,14 +5,8 @@
 #include "ast.hpp"
 #include "diagnostics.hpp"
 #include "lexer.hpp"
-#include "sym_tab.hpp"
 
 class Parser {
-    SymTable globalTable;
-
-    enum { LOWEST_PRECEDENCE = 0, HIGHEST_PRECEDENCE = 100 };
-    static int get_precedence(TokenType type);
-
     void assert_token(TokenType type, const std::string& msg = "");
     inline bool check_token(TokenType type) { return lexer.peek_token()->type == type; }
 
@@ -39,8 +33,7 @@ class Parser {
    public:
     Lexer lexer;
     Diagnostics& dx;
-
-    explicit Parser() : dx(lexer.dx) {}
+    Parser() : dx(lexer.dx) {}
 
     std::unique_ptr<ASTProgram> parse_program();
 };

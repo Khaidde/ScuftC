@@ -1,0 +1,59 @@
+Source:
+    b = 3 * a + 333
+    a: Bool = mult(244, 9000)
+    gt = (v1: Int, v2: Int) -> Int {
+        return v1 > v2
+    } 
+    print(Int, 32)
+    print(String, "stingasdf")
+
+    print(String, "ASDF", Bool, false)
+
+    print => (T: Type, thing: T, G: Type, thing2: G) -> T {
+
+    }
+
+    makeCursor (12424, _ );
+    // beginIndex = 12424
+    // endIndex = 12425
+
+    makeCursor(12424);
+
+    random => (beginIndex: int, endIndex: int = beginIndex + 1, flag: bool) {
+
+    }
+    print => (thing: $T, thing2: $G) -> T {
+
+    }
+TypeChecking:
+    Define b:
+    0:  Int     | 3                     // Decide whether literal type is immediately known?
+    1:  _       | yield a               // Look for existing definition of "a" OR (freeze execution, push (a, #1) to stack and goto next section (Define a))
+    2:  _       | yield (#t0).*(#t1)    // Access static type of t0 and find + operator for type
+    3:  Int     | 333
+    4:  _       | yield (#t2).+(#t3)
+                | assertType b _        // assert the type of b with nothing because b has no predefined type
+    5:  _       | declareType b #t4     // Define the type of b to be the type of line 4
+                | checkDepend           // Do nothing because no variable relies on b thus far
+    Define a:
+    7:  Int     | 244
+    8:  Int     | 3
+    9:  _       | yield mult(#t6, #t7)  // Look for existing function signature of mult OR freeze execution and go to next line 
+                | assertType a #t9      // Will also check whether #t6 matches the predefined type "Int"
+                | checkDepend           // Realize that "a" was yielded previously and go back to line 1 to continue execution
+    Define mult:
+                | insertStackBreakEnter // Insert marker in dependency stack to signify enter of new procedural block
+    Define m1:
+    10: _       | declareType m1 Int
+                | checkDepend           
+    Define m2:
+    11: _       | declareType m2 Int     
+                | checkDepend           // Still need to checkDepend in case m1 relies on m2 somehow
+    Return:
+    12: _       | yield m1
+    13: _       | yield m2
+    14: _       | m1 * m2
+                | defineType mult (#t7, #t8) -> #t11
+                | insertStackBreakExit  // Insert marker in dependency stack to signify exit current block
+
+Resolution (Pass through the pseudo code above and resolve types):

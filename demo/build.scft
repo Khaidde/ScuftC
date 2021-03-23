@@ -22,12 +22,12 @@ build = (compiler: *Compiler) {
     Capable of modifying and instrumenting the code at compile time
     For example:
         original source:
-            funcDoStuff = () -> int {
+            funcDoStuff = () -> Int {
                 a = 3
                 return a
             }
         translated source:
-            funcDoStuff = () -> int {
+            funcDoStuff = () -> Int {
                 print ("Entering funcDoStuff") // This line is automatically inserted
                 a = 3
                 print ("Leaving funcDoStuff") // This line is automatically inserted
@@ -41,7 +41,7 @@ build = (compiler: *Compiler) {
 // Simple procedure to replace all declaration names in globa 
 insertFunction = (prgm: *ASTProgram) {
     factorial: *ASTDecl = AST.fromString(
-        "factorial = (num: int) {
+        "factorial = (num: Int) {
             if num == 1 return 1
             return factorial(num - 1) * num
         }"

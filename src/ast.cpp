@@ -6,6 +6,27 @@
 #include "diagnostics.hpp"
 #include "lexer.hpp"
 
+namespace internal {
+
+std::string indent_guide(int count) {
+    static constexpr int DUMP_INDENT_LENGTH = 2;
+
+    std::string base = "|" + std::string(DUMP_INDENT_LENGTH - 1, ' ');
+    std::string res = base;
+    for (int i = 1; i < count; i++) {
+        res += base;
+    }
+    return res;
+}
+
+inline std::string indent(int count) { return std::string(Lexer::TAB_WIDTH * count, ' '); }
+
+std::string recur_dump(const ASTNode& node, int indentCt, bool verbose);
+
+std::string recur_print_ast(const ASTNode& node, int indentCt);
+
+}  // namespace internal
+
 std::string node_type_to_str(NodeType type) {
     switch (type) {
         case NodeType::UNKNOWN:
@@ -55,22 +76,9 @@ std::string node_type_to_str(NodeType type) {
     }
 }
 
-namespace {
+void dump_ast(const ASTNode& node, bool verbose) { std::cout << internal::recur_dump(node, 0, verbose) << std::endl; }
 
-constexpr int DUMP_INDENT_LENGTH = 2;
-
-std::string indent_guide(int count) {
-    std::string base = "|" + std::string(DUMP_INDENT_LENGTH - 1, ' ');
-    std::string res = base;
-    for (int i = 1; i < count; i++) {
-        res += base;
-    }
-    return res;
-}
-
-inline std::string indent(int count) { return std::string(Lexer::TAB_WIDTH * count, ' '); }
-
-std::string recur_dump(const ASTNode& node, int indentCt, bool verbose) {
+std::string internal::recur_dump(const ASTNode& node, int indentCt, bool verbose) {
     std::string dump = indent_guide(indentCt) + node_type_to_str(node.nodeType) + " ";
     switch (node.nodeType) {
         case NodeType::PROGRAM: {
@@ -321,7 +329,9 @@ std::string recur_dump(const ASTNode& node, int indentCt, bool verbose) {
     return dump;
 }
 
-std::string recur_print_ast(const ASTNode& node, int indentCt) {
+std::string print_ast(const ASTNode& node) { return internal::recur_print_ast(node, 0); }
+
+std::string internal::recur_print_ast(const ASTNode& node, int indentCt) {
     std::string str;
     switch (node.nodeType) {
         case NodeType::PROGRAM: {
@@ -364,6 +374,12 @@ std::string recur_print_ast(const ASTNode& node, int indentCt) {
             }
             str += recur_print_ast(*forLoop.blockStmt, indentCt);
         } break;
+        case NodeType::BREAK: {
+            return "break";
+        }
+        case NodeType::CONT: {
+            return "continue";
+        }
         case NodeType::RET: {
             auto& ret = static_cast<const ASTRet&>(node);
             str += "return";
@@ -426,10 +442,6 @@ std::string recur_print_ast(const ASTNode& node, int indentCt) {
     }
     return str;
 }
-
-}  // namespace
-
-void dump_ast(const ASTNode& node, bool verbose) { std::cout << recur_dump(node, 0, verbose) << std::endl; }
 
 std::string print_expr(const ASTExpression& expr) {
     std::string str;
@@ -567,8 +579,6 @@ std::string print_expr(const ASTExpression& expr) {
     }
     return str;
 }
-
-std::string print_ast(const ASTNode& node) { return recur_print_ast(node, 0); }
 
 /* TODO possible formatting of dump print 2/8/21
 testMod.varName: int = 3 + 2

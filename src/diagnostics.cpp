@@ -90,10 +90,10 @@ std::string Diagnostics::emit() {
                     ch += src[i] == '\t' ? Lexer::TAB_WIDTH : 1;
                 }
                 size += TAG_LEN;
-                size += 6;  // (line:
+                size += 3;  // (l:
                 e->line = l->line;
                 size += strlen_num(e->line);
-                size += 6;  // , col:
+                size += 4;  // , c:
                 e->ch = ch;
                 size += strlen_num(e->ch + 1 + e->offset);
                 size += 2;  // )
@@ -142,10 +142,7 @@ std::string Diagnostics::emit() {
     for (auto& e : errors) {
         switch (e->infoTag) {
             case ErrorMsg::EMPTY:
-                res += "------";
-                break;
-            case ErrorMsg::CONTEXT:
-                res += "   In:";
+                res += "      ";
                 break;
             case ErrorMsg::ERROR:
                 res += "Error:";
@@ -154,9 +151,9 @@ std::string Diagnostics::emit() {
                 res += "Warn::";
                 break;
         }
-        res += "(line:";
+        res += "(l:";
         res += std::to_string(e->line);
-        res += ", col:";
+        res += ", c:";
         res += std::to_string(e->ch + 1 + e->offset);
         res += ") ";
         res += e->msg;

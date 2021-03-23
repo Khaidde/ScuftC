@@ -1,23 +1,23 @@
 
 
 /*
-funcTest = 3 + (a: (T: type) => T, b:string, d: other(Particle)) int 
+funcTest = 3 + (a: (T: type) => T, b:String, d: other(Particle)) Int 
 a = 4
 */
 Point = ty {
-    x: int
-    y: int
+    x: Int
+    y: Int
 }
 
-main = (argc: int) {
-    val = (a: int, b: int) :: a + b
+main = (argc: Int) {
+    val = (a: Int, b: Int) :: a + b
 
     other = () { 
         for {
             print()
         }
         if boolVal {
-            return (int, Particle) -> void 
+            return (Int, Particle) -> Void 
         } else if true {
             if (true) {
                 bruh()
@@ -35,7 +35,7 @@ main = (argc: int) {
 pointA = Point.{}//x = 3 } + 3
 /*
     x = 4,
-    y: int = 7,
+    y: Int = 7,
 }
 */
 

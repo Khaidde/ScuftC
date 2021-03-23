@@ -1,0 +1,11 @@
+// b -> decl a 
+// add -> decl b
+
+c: int = 3
+a: int = (c * b) + 6 // Freeze type checking on b -> dependency list
+b: int = add(5, "String")
+if true {} 
+
+add: (int, string) -> int => (x: int, y: string) -> int {
+    return x + y.length
+}  

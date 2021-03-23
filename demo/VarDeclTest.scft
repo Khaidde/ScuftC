@@ -4,35 +4,37 @@
    */
    spaceMod => mod {
    Particle => ty {
-     id: string => "testParticle"
-    x: int
-    y: int  
-   } + type
+     id: String => "testParticle"
+    x: Int
+    y: Int  
+   } + Type
    asdf = 3
    Star => ty {
-     bright: bool
+     bright: Bool
    }
    }
      val = (false && true + 2) % 5 + 3 * 8 
-   t : int => other + (5  + 2 - true   )  
+   t : Int => other + (5  + 2 - true   )  
     thing.that = 3
-    strCool: string
-    testFunc = (a: int, thing: ty {}) {
-      while true {
+    strCool: String
+    testFunc = (a: Int, thing: ty {}) {
 
+      for i = 0, i == 4, i = i + 1 {
+        testThing = 123
+        continue
       }
 
-      for i = 0, { a = 3 }
-
-      testThing = 123
+      for {
+        break
+      }
       return 123 
        
     } 
     d = () {
       return ty {
         other = 3
-        a = (a: int) -> void {
-          stuff = (int) -> void {
+        a = (a: Int) -> Void {
+          stuff = (Int) -> Void {
             print()
             cool = 3
           }
@@ -40,12 +42,12 @@
       } 
     }
 
-  add: (int, int) -> int => (a: int, b: int) :: a + b 
+  add: (Int, Int) -> Int => (a: Int, b: Int) :: a + b 
   call = callStuff(3, a + 5, "cool", Other.{})
 
 Point => ty {
-  x: int
-  y: int
+  x: Int
+  y: Int
 }
 
 other = module.part.x(3, 4 + 2).* + thing.*

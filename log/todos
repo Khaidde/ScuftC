@@ -33,7 +33,7 @@ x Think of a better way to deal with compiler flags and making them global
         doStuff()
     }
 3/8/21
-- Fix syntax highlighting to correctly highlight "//" (single line comment with no comment)
+x Fix syntax highlighting to correctly highlight "//" (single line comment with no comment)
 - Create context system in diagnostics to report "Error in [context]" at the start of a collection of various errors
 - Parse function parameter as a declaration
 - Build diagnostics string in one cycle
@@ -50,3 +50,25 @@ x Switch to snake case for functions
 - Consider moving parse_func_type into parse_left_paren_expr (make massive function)
 - Redesign "recover mode" in the diagnostics stuff
 x Delete while loops in favor of for loops
+3/18/21
+- Rewrite parse_left_paren_expr using a shift-reduce and state machine
+- Handle \ (\t, \n, \r, etc) and don't parse them as identifiers: a\n: int = 2 should not be valid
+3/23/21
+- Generate typechecking IR on a per-expression basis
+    doStuff = () {
+        if 3 < mult(5, b) { // Generate IR for #assert_bool 3 < mult(5, b)
+            c = 4 + 5 // Generate IR for #assert_type c: _ = 4 + 5
+        }
+    }
+- Rethink what a constant function really means: foo => () {} Determine function purity in a different way or disregard idea
+- Think about dynamic type checking
+    randType: Type
+
+    if rand_int(0) == 1 {
+        randType = Point
+    } else {
+        randType = String 
+    }
+
+    // a = 5 - randType.x * 3 // Throw error because randType.x is not known
+    a = 5 - (<Point> randType).x * 3

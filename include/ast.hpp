@@ -44,8 +44,6 @@ enum class NodeType : unsigned char {
 
 std::string node_type_to_str(NodeType type);
 
-inline bool is_expression_type(NodeType nodeType) { return nodeType >= NodeType::TYPE_LIT; }
-
 struct ASTNode;
 struct ASTExpression;
 struct ASTProgram;
@@ -70,6 +68,8 @@ struct ASTLit;
 struct ASTUnOp;
 struct ASTDeref;
 struct ASTBinOp;
+
+inline bool is_expression_type(NodeType nodeType) { return nodeType >= NodeType::TYPE_LIT; }
 
 template <class T>
 inline std::unique_ptr<T> make_node(const Token& tkn) {
@@ -238,5 +238,5 @@ struct ASTBinOp : ASTExpression {
 
 void dump_ast(const ASTNode& node, bool verbose);
 
-std::string print_expr(const ASTExpression& expr);
 std::string print_ast(const ASTNode& node);
+std::string print_expr(const ASTExpression& expr);

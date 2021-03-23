@@ -2,7 +2,10 @@
 
 #include <iostream>
 
-int Parser::get_precedence(TokenType type) {
+namespace internal {
+enum { LOWEST_PRECEDENCE = 0, HIGHEST_PRECEDENCE = 100 };
+
+int get_precedence(TokenType type) {
     switch (type) {
         case TokenType::COND_OR:
             return 1;
@@ -50,6 +53,7 @@ int Parser::get_precedence(TokenType type) {
             return LOWEST_PRECEDENCE;
     }
 }
+}  // namespace internal
 
 void Parser::assert_token(TokenType type, const std::string& msg) {
     auto actualTkn = lexer.peek_token();
@@ -328,9 +332,11 @@ std::unique_ptr<ASTNode> Parser::parse_decl_expr() {
 
     if (decl->lvalue->nodeType == NodeType::NAME) {
         auto name = static_cast<ASTName&>(*decl->lvalue);
+        /*
         if (!globalTable.find(name.ref)) {
             globalTable.insert(name.ref, decl.get());
         }
+        */
     }
 
     return decl;
@@ -459,7 +465,7 @@ std::unique_ptr<ASTExpression> Parser::parse_function_type(std::unique_ptr<ASTEx
     return funcType;
 }
 
-std::unique_ptr<ASTExpression> Parser::parse_expr() { return recur_expr(LOWEST_PRECEDENCE); }
+std::unique_ptr<ASTExpression> Parser::parse_expr() { return recur_expr(internal::LOWEST_PRECEDENCE); }
 
 std::unique_ptr<ASTExpression> Parser::parse_operand() {
     auto tkn = lexer.peek_token();
@@ -555,7 +561,7 @@ std::unique_ptr<ASTExpression> Parser::parse_operand() {
         case TokenType::OP_MULT: {
             auto unOp = make_node<ASTUnOp>(*tkn);
             unOp->op = lexer.next_token();
-            unOp->inner = recur_expr(HIGHEST_PRECEDENCE);
+            unOp->inner = recur_expr(internal::HIGHEST_PRECEDENCE);
             unOp->endI = unOp->inner->endI;
             return unOp;
         }
@@ -573,7 +579,7 @@ std::unique_ptr<ASTExpression> Parser::parse_operand() {
                 dx.err_token("Too many closing parenthesis", *lexer.peek_token())->fix("Delete )");
             } else {
                 dx.err_token(
-                    "Expected an expression but found '" + token_type_to_str(lexer.peek_token()->type) + "' instead",
+                    "Expected an expression but found " + token_type_to_str(lexer.peek_token()->type) + " instead",
                     *lexer.peek_token());
             }
             lexer.next_token();  // Consume [unknown expr token]
@@ -585,7 +591,7 @@ std::unique_ptr<ASTExpression> Parser::recur_expr(int prec) {
     std::unique_ptr<ASTExpression> expr = parse_operand();
 
     for (;;) {
-        int peekedPrec = get_precedence(lexer.peek_token()->type);
+        int peekedPrec = internal::get_precedence(lexer.peek_token()->type);
         if (peekedPrec > prec) {
             if (check_token(TokenType::LEFT_PARENS)) {
                 exprDepth++;

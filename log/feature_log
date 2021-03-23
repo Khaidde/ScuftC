@@ -441,7 +441,7 @@ v RESOLVED/UPDATED VERSION/NO LONGER APPLICABLE
             // code to calculate sqrt 
             return sqrtVal
         }
-    - Type "constructor" syntax
+    - Type "constructor/template" syntax
         // Pseudo code for what int would hypothetically look like
         int = ty {
             int.DEFAULT = 0
@@ -475,3 +475,78 @@ v RESOLVED/UPDATED VERSION/NO LONGER APPLICABLE
             x: Double 
             y: Double 
         }
+3/23/21 (Tuesday)
+    - Pattern matching
+        doThing = (num: Int, off: Int) {
+            // All branches in switch MUST be of the same type
+            thing = switch num { // switch is an expression
+                1 + off :: "one" // case statement can be a dynamic expression
+                2       :: "two"
+                2 + 1   :: "three" 
+                        :: "none" // excluding a rhs expression is the equivalent of "default"
+            }
+            print(thing)
+        }
+        special = (T: Type, obj: T) -> Int { // All calls to this function generate a new definition based on T 
+            val: int
+            switch T { 
+                Int :: {
+                    val = obj + 3 // obj is automatically casted to Int
+                } // Note that case leaking is not allowed in this language
+                Bool :: {
+                    if obj {
+                        val = 12 
+                    } else {
+                        val = 13
+                    }
+                }
+                String :: {
+                    val = obj.length 
+                }
+                Point :: "Does nothing" // This line does nothing because ouput of switch is not stored anywhere
+                :: { val = 0 }
+            }
+            return val
+        }
+        // Compiler transforms a call like "special(Int, 1234)" into the following function
+        special = (T: Type = Int, obj: Int) {
+            val = obj + 3
+            return val
+        }
+    - Unordered function parameter checking and evaluation
+        cursor = (other = end, begin: int, end = begin + 1) {
+            // Do stuff where end, by default, is set to the value of begin + 1
+            // other is set by default to the value of end
+        }
+    - Dynamic Types
+        type_of: (Dynamic) -> Type {
+            // Searches for type in static_lookup_table and returns the found type or error if type not found
+        }
+        Dynamic => ty (T: type) {
+            // Note typeID is an unsigned 8-bit number
+            // There can be at most 256 different dynamic types by default (can be changed using compiler flags)
+            typeID: u8 => lookup_table_get_u8(T)
+            T val
+        }
+        
+        factoryCreateType = (name: String) -> Dynamic(Add) {
+            return switch name {
+                "Int"    :: Int 
+                "String" :: String
+                         :: Point  // Assume Point has trait "Add"
+            } 
+        }
+        main = () {
+            name = switch rand_int(2) {
+                0 :: "Int"
+                1 :: "String" 
+            }
+            val: Dynamic(Add) = factoryCreate(name)
+            addedVal = val + val
+
+            switch type_of(val) {
+                Int :: print("Integer")
+                String :: print("String")
+            }
+        }
+        

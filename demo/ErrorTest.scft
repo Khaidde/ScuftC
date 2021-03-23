@@ -33,29 +33,29 @@
 // forLoop = () { for i = 0, i < 3 {} } // Expected another statement after the condition
 // forLoop = () { for i = 0, i < 20 i++ {} } // Expected a comma after the conditional
 // forLoop = () { for i = 0, i = 20, i++ {} } // Replace = with ==
-// forLoop = () { for a = 10 {} } // For loop condition must be an expression
+// forLoop = () { for i = 10 {} } // For loop condition must be an expression
 // forLoop = () { for i = 10 if {} } // Expected a comma after the initial statement  
 
 // --- assert_parse_decl
 // See parse_program
 
 // --- parse_function (parse_left_paren_expr)
-// funcExpr = (a: string, if, 3 + 4) {} // Function parameter must declare a variable 
-// funcExpr = (a: string, 3 + 3, b: bool, varName) {} // Expression is not allowed in funtion parameter list
-// funcExpr = (a: int, )  {} // Expected another function parameter after the comma
-// funcExpr = (a: bool 3 + 3) {} // Expected either , or ) in function parameter list
-// funcExpr = (a: type // Unterminated code at end of file. Expected another function parameter
-// funcExpr = (a: int) :: return 3 + 4 // Return is not allowed here
-// funcExpr = (a: int) :: if // Must have an expression immediately after :: 
-// funcExpr = (a: bool) // Expected a return type or function block
-// funcExpr = (a: bool) 3 + 4 // Function body must start with { and end with }
+// funcExpr = (a: String, if, 3 + 4) {} // Function parameter must declare a variable 
+// funcExpr = (a: String, 3 + 3, b: Bool, varName) {} // Expression is not allowed in funtion parameter list
+// funcExpr = (a: Int, )  {} // Expected another function parameter after the comma
+// funcExpr = (a: Bool 3 + 3) {} // Expected either , or ) in function parameter list
+// funcExpr = (a: Type // Unterminated code at end of file. Expected another function parameter
+// funcExpr = (a: Int) :: return 3 + 4 // Return is not allowed here
+// funcExpr = (a: Int) :: if // Must have an expression immediately after :: 
+// funcExpr = (a: Bool) // Expected a return type or function block
+// funcExpr = (a: Bool) 3 + 4 // Function body must start with { and end with }
 
 // --- parse_function_type
-// funcTypeExpr = (int, bool, ) -> int // Expected another type after the comma
-// funcTypeExpr = (3 + (int // Not enough parenthesis
-// funcTypeExpr = (int, bool Particle) -> 3 + 4 // Expected either , or ) in function type input list
-// funcTypeExpr = (int, bool // Unterminated code at end of file. Expected another type
-// funcTypeExpr = (string, double, string) // Function type must explicitly declare a return type
+// funcTypeExpr = (Int, Bool, ) -> Int // Expected another type after the comma
+// funcTypeExpr = (3 + (Int // Not enough parenthesis
+// funcTypeExpr = (Int, Bool Particle) -> 3 + 4 // Expected either , or ) in function type input list
+// funcTypeExpr = (Int, Bool // Unterminated code at end of file. Expected another type
+// funcTypeExpr = (String, Double, String) // Function type must explicitly declare a return type
 
 // --- parse_module
 // modExpr = addOther(mod a = 3 } ) // Expected { after mod keyword
@@ -79,7 +79,7 @@
 
 // --- parse_type_init
 // init = Particle.{ a = 3, other, 123, 3 + 5, b = 2 } // [Expression] is not allowed here
-// init = Particle.{ a = 5, b: int = 3 } // Variable declaration is not allowed here
+// init = Particle.{ a = 5, b: Int = 3 } // Variable declaration is not allowed here
 // init = Particle.{ a = 6, b = 5 c = 3 + 5 } // Expected either , or }
 // init = Particle.{ a = 7 // Unterminated code at end of file. Expected closing }
 

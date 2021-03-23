@@ -1,13 +1,11 @@
 #pragma once
 
 #include <memory>
-#include <stack>
+#include <stdexcept>
 #include <string>
-#include <string_view>
 #include <vector>
 
 #include "diagnostics.hpp"
-#include "flags.hpp"
 
 enum class TokenType : unsigned char {
     UNKNOWN,
@@ -33,8 +31,8 @@ enum class TokenType : unsigned char {
 
     // Types
     VOID_TYPE,
-    MOD_TYPE,  // spaceMod: module = mod { }
-    TY_TYPE,   // thing: type = typeof( Particle )
+    MOD_TYPE,  // spaceMod: Module = mod { }
+    TY_TYPE,   // thing: Type = #type Particle
     INT_TYPE,
     DOUBLE_TYPE,
     STRING_TYPE,
@@ -126,22 +124,33 @@ class Lexer {
     static constexpr size_t TAB_WIDTH = 4;
 
     Diagnostics dx;
-    Lexer() : dx(sourceStr) {}
+    inline Lexer() : dx(sourceStr) {}
 
     std::string sourceStr;
-    void from_file_path(const char* filePath);
+    bool from_file_path(const char* filePath);
 
     std::unique_ptr<Token> make_token(TokenType type);
     std::unique_ptr<Token> consume_token();
 
-    Token* peek_token();
-    Token* next_token();
+    inline Token* peek_token() {
+        if (cacheIndex >= tokenCache.size()) tokenCache.push_back(consume_token());
+        return tokenCache[cacheIndex].get();
+    }
 
-    Token* last_token();
+    inline Token* next_token() {
+        Token* token = peek_token();
+        if (token->type != TokenType::END) cacheIndex++;
+        return token;
+    }
+
+    inline Token* last_token() {
+        ASSERT(cacheIndex > 0, "Can't get last token of the first token in the file.");
+        return tokenCache.at(cacheIndex - 1).get();
+    }
 
     inline bool is_cursor_char(char assertChar) { return sourceStr[curIndex + curCLen] == assertChar; }
 
-    static inline bool is_whitespace(char ch) { return ch == ' ' || ch == '\t' || ch == '\r' || ch == '\n'; }
+    static inline bool is_whitespace(char ch) { return ch == ' ' || ch == '\t' || ch == '\n'; }
     static inline bool is_letter(char ch) {
         return (ch >= 65 && ch < 91) || (ch >= 97 && ch < 123) || ch == '\'' || ch == '_';
     }

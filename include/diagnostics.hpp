@@ -32,7 +32,7 @@ struct Line {
 };
 
 struct ErrorMsg {
-    enum Tag { EMPTY, CONTEXT, ERROR, WARNING };
+    enum Tag { EMPTY, ERROR, WARNING };
     Tag infoTag = ERROR;
 
     int beginI;

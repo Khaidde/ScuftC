@@ -33,7 +33,7 @@ bool cmp_identifier(const Token& first, const Token& second) {
 void SymTable::insert(Token* identifier, ASTDecl* decl) {
     int index = hash(*identifier);
 
-    // TODO search through linked list for existing identifier
+    // TODO search through linked list for existing identifier and preemptive return if found
 
     TableEntry* entry = new TableEntry(table[index]);
     table[index] = entry;

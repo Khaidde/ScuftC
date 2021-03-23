@@ -35,19 +35,19 @@ std::string token_type_to_str(TokenType type) {
         case TokenType::COLON:
             return ":";
         case TokenType::VOID_TYPE:
-            return "void";
+            return "Void";
         case TokenType::MOD_TYPE:
-            return "module";
+            return "Module";
         case TokenType::TY_TYPE:
-            return "type";
+            return "Type";
         case TokenType::INT_TYPE:
-            return "int";
+            return "Int";
         case TokenType::DOUBLE_TYPE:
-            return "double";
+            return "Double";
         case TokenType::STRING_TYPE:
-            return "string";
+            return "String";
         case TokenType::BOOL_TYPE:
-            return "bool";
+            return "Bool";
         case TokenType::ASSIGNMENT:
             return "=";
         case TokenType::CONST_ASSIGNMENT:
@@ -137,7 +137,7 @@ std::string token_type_to_str(TokenType type) {
     }
 }
 
-void Lexer::from_file_path(const char* filePath) {
+bool Lexer::from_file_path(const char* filePath) {
     std::ifstream file(filePath);
     if (file.is_open()) {
         file.seekg(0, std::ios::end);
@@ -148,8 +148,9 @@ void Lexer::from_file_path(const char* filePath) {
 
         curIndex = 0;
         curCLen = 1;
+        return true;
     } else {
-        throw std::ifstream::failure("File not found");
+        return false;
     }
 }
 
@@ -165,6 +166,11 @@ std::unique_ptr<Token> Lexer::make_token(TokenType type) {
 }
 
 std::unique_ptr<Token> Lexer::consume_token() {
+    if (curIndex < sourceStr.length() && sourceStr[curIndex] == '\r') {
+        dx.err_loc("\\r is not a supported character in this language", curIndex)->note("Use \\n instead");
+        return make_token(TokenType::UNKNOWN);
+    }
+
     // Skip over whitespace
     while (curIndex < sourceStr.length() && is_whitespace(sourceStr[curIndex])) curIndex++;
 
@@ -373,19 +379,19 @@ std::unique_ptr<Token> Lexer::consume_token() {
                     return make_token(TokenType::TRUE);
                 } else if (keyword == "false") {
                     return make_token(TokenType::FALSE);
-                } else if (keyword == "void") {
+                } else if (keyword == "Void") {
                     return make_token(TokenType::VOID_TYPE);
-                } else if (keyword == "module") {
+                } else if (keyword == "Module") {
                     return make_token(TokenType::MOD_TYPE);
-                } else if (keyword == "type") {
+                } else if (keyword == "Type") {
                     return make_token(TokenType::TY_TYPE);
-                } else if (keyword == "int") {
+                } else if (keyword == "Int") {
                     return make_token(TokenType::INT_TYPE);
-                } else if (keyword == "double") {
+                } else if (keyword == "Double") {
                     return make_token(TokenType::DOUBLE_TYPE);
-                } else if (keyword == "string") {
+                } else if (keyword == "String") {
                     return make_token(TokenType::STRING_TYPE);
-                } else if (keyword == "bool") {
+                } else if (keyword == "Bool") {
                     return make_token(TokenType::BOOL_TYPE);
                 } else if (keyword == "return") {
                     return make_token(TokenType::RETURN);
@@ -484,22 +490,4 @@ std::unique_ptr<Token> Lexer::consume_token() {
             }
             return make_token(TokenType::UNKNOWN);
     }
-}
-
-Token* Lexer::peek_token() {
-    if (cacheIndex >= tokenCache.size()) {
-        tokenCache.push_back(consume_token());
-    }
-    return tokenCache.at(cacheIndex).get();
-}
-
-Token* Lexer::next_token() {
-    Token* token = peek_token();
-    if (token->type != TokenType::END) cacheIndex++;
-    return token;
-}
-
-Token* Lexer::last_token() {
-    ASSERT(cacheIndex > 0, "Can't get last token of the first token in the file.");
-    return tokenCache.at(cacheIndex - 1).get();
 }
