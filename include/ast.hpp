@@ -59,7 +59,6 @@ struct ASTFuncType;
 struct ASTMod;
 struct ASTTy;
 struct ASTFunc;
-struct ASTEmpty;
 struct ASTName;
 struct ASTDotOp;
 struct ASTCall;
@@ -159,6 +158,7 @@ struct ASTDecl : ASTNode {
 
     Token* assignType;
     std::unique_ptr<ASTExpression> rvalue;
+
     ASTDecl() : ASTNode(NodeType::DECL) {}
 };
 

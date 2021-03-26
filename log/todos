@@ -72,3 +72,4 @@ x Delete while loops in favor of for loops
 
     // a = 5 - randType.x * 3 // Throw error because randType.x is not known
     a = 5 - (<Point> randType).x * 3
+- Transform ASTNode into a union of various types

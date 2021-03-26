@@ -84,7 +84,7 @@ std::string internal::recur_dump(const ASTNode& node, int indentCt, bool verbose
         case NodeType::PROGRAM: {
             auto& prgm = static_cast<const ASTProgram&>(node);
             dump += "\n";
-            for (auto&& decl : prgm.declarations) {
+            for (auto& decl : prgm.declarations) {
                 dump += recur_dump(*decl, indentCt + 1, verbose) + "\n";
             }
         } break;
@@ -92,7 +92,7 @@ std::string internal::recur_dump(const ASTNode& node, int indentCt, bool verbose
             auto& block = static_cast<const ASTBlock&>(node);
             if (!block.statements.empty()) {
                 dump += "\n";
-                for (auto&& stmt : block.statements) {
+                for (auto& stmt : block.statements) {
                     dump += recur_dump(*stmt, indentCt + 1, verbose) + "\n";
                 }
                 dump = dump.substr(0, dump.length() - 1);
@@ -185,7 +185,7 @@ std::string internal::recur_dump(const ASTNode& node, int indentCt, bool verbose
             dump += "\n";
             if (!funcType.inTypes.empty()) {
                 dump += indent_guide(indentCt + 1) + "<inTypes>\n";
-                for (auto&& type : funcType.inTypes) {
+                for (auto& type : funcType.inTypes) {
                     dump += recur_dump(*type, indentCt + 3, verbose) + "\n";
                 }
             }
@@ -201,7 +201,7 @@ std::string internal::recur_dump(const ASTNode& node, int indentCt, bool verbose
                     dump += "<declarations>\n";
                     indentCt++;  // HACK to force an extra indent
                 }
-                for (auto&& decl : mod.declarations) {
+                for (auto& decl : mod.declarations) {
                     dump += recur_dump(*decl, indentCt + 1, verbose) + "\n";
                 }
                 dump = dump.substr(0, dump.length() - 1);
@@ -218,7 +218,7 @@ std::string internal::recur_dump(const ASTNode& node, int indentCt, bool verbose
                     dump += "<declarations>\n";
                     indentCt++;  // HACK to force an extra indent
                 }
-                for (auto&& decl : typeDef.declarations) {
+                for (auto& decl : typeDef.declarations) {
                     dump += recur_dump(*decl, indentCt + 1, verbose) + "\n";
                 }
                 dump = dump.substr(0, dump.length() - 1);
@@ -232,7 +232,7 @@ std::string internal::recur_dump(const ASTNode& node, int indentCt, bool verbose
             if (!func.parameters.empty()) {
                 if (verbose) {
                     dump += indent_guide(indentCt + 1) + "<parameters>\n";
-                    for (auto&& param : func.parameters) {
+                    for (auto& param : func.parameters) {
                         dump += recur_dump(*param, indentCt + 2, verbose) + "\n";
                     }
                 } else {
@@ -279,7 +279,7 @@ std::string internal::recur_dump(const ASTNode& node, int indentCt, bool verbose
             if (!call.arguments.empty()) {
                 dump += "\n";
                 dump += indent_guide(indentCt + 1) + "<arguments>\n";
-                for (auto&& expr : call.arguments) {
+                for (auto& expr : call.arguments) {
                     dump += recur_dump(*expr, indentCt + 2, verbose) + "\n";
                 }
                 dump = dump.substr(0, dump.length() - 1);
@@ -292,7 +292,7 @@ std::string internal::recur_dump(const ASTNode& node, int indentCt, bool verbose
             if (!typeInit.assignments.empty()) {
                 dump += "\n";
                 dump += indent_guide(indentCt + 1) + "<assignments>\n";
-                for (auto&& assignment : typeInit.assignments) {
+                for (auto& assignment : typeInit.assignments) {
                     dump += indent_guide(indentCt + 2) + "Assignment\n";
                     dump += indent_guide(indentCt + 3) + "<fieldRef> " + print_ast(*assignment->lvalue) + "\n";
                     dump += indent_guide(indentCt + 3) + "<rvalue>\n";
@@ -324,7 +324,7 @@ std::string internal::recur_dump(const ASTNode& node, int indentCt, bool verbose
             dump += indent_guide(indentCt + 1) + "<right>\n" + recur_dump(*binOp.right, indentCt + 2, verbose);
         } break;
         default:
-            ASSERT(false, "TODO DELETE: Unimplemented AST dump for node");
+            ASSERT(false, "TODO DELETE: Unimplemented AST dump for node: " + node_type_to_str(node.nodeType));
     }
     return dump;
 }
@@ -336,7 +336,7 @@ std::string internal::recur_print_ast(const ASTNode& node, int indentCt) {
     switch (node.nodeType) {
         case NodeType::PROGRAM: {
             auto& prgm = static_cast<const ASTProgram&>(node);
-            for (auto&& decl : prgm.declarations) {
+            for (auto& decl : prgm.declarations) {
                 str += recur_print_ast(*decl, indentCt) + "\n";
             }
         } break;
@@ -403,7 +403,7 @@ std::string internal::recur_print_ast(const ASTNode& node, int indentCt) {
         case NodeType::MOD: {
             auto& mod = static_cast<const ASTMod&>(node);
             str += "mod {\n";
-            for (auto&& decl : mod.declarations) {
+            for (auto& decl : mod.declarations) {
                 str += indent(indentCt + 1) + recur_print_ast(*decl, indentCt + 1);
                 str += "\n";
             }
@@ -412,7 +412,7 @@ std::string internal::recur_print_ast(const ASTNode& node, int indentCt) {
         case NodeType::TYPE_DEF: {
             auto& typeDef = static_cast<const ASTTy&>(node);
             str += "ty {\n";
-            for (auto&& decl : typeDef.declarations) {
+            for (auto& decl : typeDef.declarations) {
                 str += indent(indentCt + 1) + recur_print_ast(*decl, indentCt + 1);
                 str += "\n";
             }
@@ -466,7 +466,7 @@ std::string print_expr(const ASTExpression& expr) {
 
             std::string declListStr;
             for (int i = 0; i < mod.declarations.size(); i++) {
-                auto&& decl = mod.declarations[i];
+                auto& decl = mod.declarations[i];
                 declListStr += print_expr(*decl->lvalue);
                 if (decl->type != nullptr) declListStr += ": " + print_expr(*decl->type);
                 if (decl->rvalue != nullptr) {
@@ -483,7 +483,7 @@ std::string print_expr(const ASTExpression& expr) {
             auto& typeDef = static_cast<const ASTTy&>(expr);
             std::string declListStr;
             for (int i = 0; i < typeDef.declarations.size(); i++) {
-                auto&& decl = typeDef.declarations[i];
+                auto& decl = typeDef.declarations[i];
                 declListStr += print_expr(*decl->lvalue);
                 if (decl->type != nullptr) declListStr += ": " + print_expr(*decl->type);
                 if (decl->rvalue != nullptr) {
@@ -575,7 +575,7 @@ std::string print_expr(const ASTExpression& expr) {
         case NodeType::UNKNOWN:
             return "Unknown";
         default:
-            ASSERT(false, "Node is not an expression");
+            ASSERT(false, "Node is not an expression: " + node_type_to_str(expr.nodeType));
     }
     return str;
 }
