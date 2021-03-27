@@ -45,14 +45,15 @@ struct IRInstruct;
 
 struct IRDeclDef {
     ASTDecl* declNode;
+    bool isAnalyzing;  // Detect declaration cycles
 };
 
 struct IRVarYield {
-    ASTExpression* nameNode;
+    ASTNode* nameNode;
 };
 
 struct IRExpression {
-    ASTExpression* exprNode;
+    ASTNode* exprNode;
 };
 
 enum class BinOpType {
@@ -63,7 +64,7 @@ enum class BinOpType {
 };
 
 struct IRBinOp {
-    ASTExpression* binOpNode;
+    ASTNode* binOpNode;
 
     int leftIndex;
     int rightIndex;
@@ -88,18 +89,16 @@ struct IRInstruct {
 class Analyzer {
     Diagnostics& dx;
 
-    int traverse_get_ir_size(ASTNode& node);
+    void flatten_program(ASTNode* prgmNode);
+    void flatten_decl(ASTNode* declNode);
 
-    void flatten_program(ASTProgram& prgm);
-    void flatten_decl(ASTDecl& decl);
-
-    void flatten_expr(ASTExpression& expr);
+    void flatten_expr(ASTNode* exprNode);
 
    public:
     std::vector<IRInstruct> lineInstrs;
 
     explicit inline Analyzer(Diagnostics& dx) : dx(dx) {}
-    void analyze(ASTProgram& prgm);
+    void analyze(ASTNode* prgmNode);
 
     void ir_print();
 };

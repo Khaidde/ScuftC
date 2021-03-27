@@ -1,18 +1,33 @@
 #pragma once
 
+#include <string.h>
+
+#include <iostream>
+
 namespace Flags {
 
-extern const char* filePath;
+const char* filePath;
 
-struct DumpInfo {
-    bool print = false;
-    bool verbose = false;
-};
-extern DumpInfo dumpInfo;
-extern bool sourceFmt;
+bool sourcePrint = false;
+bool fmtPrint = false;
 
-extern bool dwSemiColons;  //-dw-semi-colons
+bool dwSemiColons = false;  //-dw-semi-colons
 
-extern bool parse_flags(int argc, char** argv);
+bool parse_flags(int argc, char** argv) {
+    filePath = argv[1];
+    for (int i = 2; i < argc; i++) {
+        if (strcmp(argv[i], "-ast-print") == 0) {
+            fmtPrint = true;
+        } else if (strcmp(argv[i], "-ast-src-print") == 0) {
+            sourcePrint = true;
+        } else if (strcmp(argv[i], "-dw-semi-colons") == 0) {
+            dwSemiColons = true;
+        } else {
+            std::cerr << "Unknown command line argument: " << argv[i] << std::endl;
+            return false;
+        }
+    }
+    return true;
+}
 
 }  // namespace Flags

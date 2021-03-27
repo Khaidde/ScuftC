@@ -5,7 +5,8 @@
 #include <stdexcept>
 
 #include "diagnostics.hpp"
-#include "lexer.hpp"
+// #include "lexer.hpp"
+#include "ast_printer.hpp"
 
 static const char* expr_type_to_str(ExprType exprType) {
     switch (exprType.baseType) {
@@ -30,86 +31,44 @@ static const char* expr_type_to_str(ExprType exprType) {
     }
 }
 
-void Analyzer::analyze(ASTProgram& prgm) {
+void Analyzer::analyze(ASTNode* prgmNode) {
     // TODO lineInstrs.reserve(traverse_get_ir_size(prgm));
 
-    flatten_program(prgm);
+    flatten_program(prgmNode);
     // printf("%dl", lineInstrs.capacity());
     ir_print();
 }
 
-// TODO
-int Analyzer::traverse_get_ir_size(ASTNode& node) {
-    int size = 0;
-    switch (node.nodeType) {
-        case NodeType::PROGRAM: {
-            auto& prgm = static_cast<ASTProgram&>(node);
-            for (auto& decl : prgm.declarations) {
-                size += traverse_get_ir_size(*decl);
-            }
-        } break;
-        case NodeType::DECL: {
-            auto& decl = static_cast<ASTDecl&>(node);
-            size += 1;
-            // TODO get size of decl.lvalue and decl.type
-            size += traverse_get_ir_size(*decl.rvalue);
-        } break;
-        case NodeType::CALL: {
-            auto& call = static_cast<ASTCall&>(node);
-            size += 1;
-            for (auto& arg : call.arguments) {
-                size += traverse_get_ir_size(*arg);
-            }
-        } break;
-        case NodeType::BIN_OP: {
-            auto& binOp = static_cast<ASTBinOp&>(node);
-            size += 1;
-            size += traverse_get_ir_size(*binOp.left);
-            size += traverse_get_ir_size(*binOp.right);
-        } break;
-        case NodeType::TYPE_LIT:
-        case NodeType::NAME:
-        case NodeType::LIT:
-            return 1;
-        default:
-            ASSERT(false, "Can't get IR size for unknown nodetype: " + node_type_to_str(node.nodeType));
-    }
-    return size;
-}
-
-void Analyzer::flatten_program(ASTProgram& prgm) {
-    for (auto& decl : prgm.declarations) {
-        flatten_decl(*decl);
+void Analyzer::flatten_program(ASTNode* prgmNode) {
+    for (auto& decl : prgmNode->prgm.declarations) {
+        flatten_decl(decl.get());
     }
 }
 
-void Analyzer::flatten_decl(ASTDecl& decl) {
+void Analyzer::flatten_decl(ASTNode* declNode) {
     // TODO flatten_expr on lvalue
 
-    if (decl.rvalue != nullptr) flatten_expr(*decl.rvalue);
+    if (declNode->decl.rvalue != nullptr) flatten_expr(declNode->decl.rvalue.get());
 
     IRInstruct instr{};
     instr.index = lineInstrs.size();
     instr.instrType = IRType::DECL_DEF;
-    instr.declDef.declNode = &decl;
+    instr.declDef.declNode = &declNode->decl;
     lineInstrs.push_back(std::move(instr));
 }
 
-void Analyzer::flatten_expr(ASTExpression& expr) {
+void Analyzer::flatten_expr(ASTNode* exprNode) {
     IRInstruct instr{};
-    switch (expr.nodeType) {
+    switch (exprNode->nodeType) {
         case NodeType::NAME: {
-            auto& name = static_cast<ASTName&>(expr);
             instr.index = lineInstrs.size();
             instr.instrType = IRType::VAR_YIELD;
-            instr.varYield.nameNode = &expr;
+            instr.varYield.nameNode = exprNode;
         } break;
         case NodeType::LIT: {
-            auto& lit = static_cast<ASTLit&>(expr);
-
             instr.index = lineInstrs.size();
             instr.instrType = IRType::EXPR;
-            switch (lit.value->type) {
+            switch (exprNode->lit.value->type) {
                 case TokenType::INT_LITERAL:
                     instr.type.baseType = BaseType::INT;
                     break;
@@ -123,22 +82,20 @@ void Analyzer::flatten_expr(ASTExpression& expr) {
                 default:
                     break;
             }
-            instr.exprRef.exprNode = &expr;
+            instr.exprRef.exprNode = exprNode;
         } break;
         case NodeType::BIN_OP: {
-            auto& binOp = static_cast<ASTBinOp&>(expr);
-
             instr.instrType = IRType::BIN_OP;
-            flatten_expr(*binOp.left);
+            flatten_expr(exprNode->binOp.left.get());
             instr.binOp.leftIndex = lineInstrs.size() - 1;
-            flatten_expr(*binOp.right);
+            flatten_expr(exprNode->binOp.right.get());
             instr.binOp.rightIndex = lineInstrs.size() - 1;
 
-            instr.binOp.binOpNode = &expr;
+            instr.binOp.binOpNode = exprNode;
             instr.index = lineInstrs.size();
         } break;
         default:
-            instr.exprRef.exprNode = &expr;
+            instr.exprRef.exprNode = exprNode;
             instr.type.baseType = BaseType::UNKNOWN;
             break;
     }
@@ -161,16 +118,16 @@ void Analyzer::ir_print() {
         switch (lineInstrs[l].instrType) {
             case IRType::DECL_DEF:
                 res += " : defineDecl ";
-                res += print_expr(*lineInstrs[l].declDef.declNode->lvalue);
+                res += ast_to_line(lineInstrs[l].declDef.declNode->lvalue.get());
                 res += "\n";
                 break;
             case IRType::VAR_YIELD:
                 res += " : yield ";
-                res += print_expr(*lineInstrs[l].varYield.nameNode);
+                res += ast_to_line(lineInstrs[l].varYield.nameNode);
                 break;
             case IRType::EXPR:
                 res += " : ";
-                res += print_expr(*lineInstrs[l].exprRef.exprNode);
+                res += ast_to_line(lineInstrs[l].exprRef.exprNode);
                 break;
             case IRType::BIN_OP:
                 res += " : ";

@@ -2,6 +2,7 @@
 #include <iostream>
 
 #include "analysis.hpp"
+#include "ast_printer.hpp"
 #include "flags.hpp"
 #include "lexer.hpp"
 #include "parser.hpp"
@@ -19,11 +20,11 @@ int main(int argc, char** argv) {
                 auto astTree = parser.parse_program();
                 std::cout << parser.dx.emit() << std::endl;
                 if (!parser.dx.has_errors()) {
-                    if (Flags::dumpInfo.print) dump_ast(*astTree, Flags::dumpInfo.verbose);
-                    if (Flags::sourceFmt) std::cout << print_ast(*astTree) << std::endl;
+                    if (Flags::fmtPrint) print_fmt_ast(astTree.get());
+                    if (Flags::sourcePrint) std::cout << ast_to_src(astTree.get()) << std::endl;
 
                     Analyzer analyzer(parser.dx);
-                    analyzer.analyze(*astTree);
+                    analyzer.analyze(astTree.get());
                     return EXIT_SUCCESS;
                 }
             } else {
