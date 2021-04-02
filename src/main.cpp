@@ -8,6 +8,9 @@
 #include "parser.hpp"
 
 int main(int argc, char** argv) {
+    hash_table_test();
+    return EXIT_SUCCESS;
+
     if (argc == 1) {
         std::cerr << "Usage: scft [filePath.scft] -[options...]" << std::endl;
         return EXIT_FAILURE;
@@ -20,11 +23,11 @@ int main(int argc, char** argv) {
                 auto astTree = parser.parse_program();
                 std::cout << parser.dx.emit() << std::endl;
                 if (!parser.dx.has_errors()) {
-                    if (Flags::fmtPrint) print_fmt_ast(astTree.get());
-                    if (Flags::sourcePrint) std::cout << ast_to_src(astTree.get()) << std::endl;
+                    if (Flags::fmtPrint) print_fmt_ast(astTree);
+                    if (Flags::sourcePrint) std::cout << ast_to_src(astTree) << std::endl;
 
                     Analyzer analyzer(parser.dx);
-                    analyzer.analyze(astTree.get());
+                    analyzer.analyze(astTree);
                     return EXIT_SUCCESS;
                 }
             } else {

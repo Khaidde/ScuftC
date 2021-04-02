@@ -1,14 +1,13 @@
 #include "diagnostics.hpp"
 
 #include <cmath>
-#include <stdexcept>
 
 #include "ast.hpp"
 #include "lexer.hpp"
 
 ErrorMsg* Diagnostics::last_err() {
     ASSERT(!errors.empty(), "No last error was ever recorded");
-    return errors.back().get();
+    return errors.end();
 }
 
 ErrorMsg* Diagnostics::err_loc(std::string&& msg, int beginI, int endI) {
@@ -17,15 +16,10 @@ ErrorMsg* Diagnostics::err_loc(std::string&& msg, int beginI, int endI) {
     if (endI > maxIndex) maxIndex = endI;
 
     // Ignore duplicate errors at the same place
-    auto errorMsg = std::make_unique<ErrorMsg>(std::move(msg), beginI, endI);
+    ErrorMsg* errorMsg = new ErrorMsg(std::move(msg), beginI, endI);
 
-    if (isRecovering) {
-        discardErrors.push_back(std::move(errorMsg));
-        return discardErrors.back().get();
-    } else {
-        errors.push_back(std::move(errorMsg));
-        return errors.back().get();
-    }
+    if (!isRecovering) errors.push(errorMsg);
+    return errorMsg;
 }
 
 ErrorMsg* Diagnostics::err_loc(std::string&& msg, int beginI) { return err_loc(std::move(msg), beginI, beginI + 1); }
@@ -81,7 +75,8 @@ std::string Diagnostics::emit() {
 
     size_t size = 0;
     ErrorMsg* lastErr = nullptr;
-    for (const auto& e : errors) {
+    for (int c = 0; c < errors.size; c++) {
+        ErrorMsg* e = errors[c];
         size += e->msg.size() + 1;  // Add new line char
         for (Line* l = lastLine; l != nullptr; l = l->next) {
             if (e->beginI >= l->beginI) {
@@ -139,7 +134,8 @@ std::string Diagnostics::emit() {
 
     std::string res;
     res.reserve(size);
-    for (auto& e : errors) {
+    for (int i = 0; i < errors.size; i++) {
+        ErrorMsg* e = errors[i];
         switch (e->infoTag) {
             case ErrorMsg::EMPTY:
                 res += "      ";

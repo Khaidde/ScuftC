@@ -17,7 +17,7 @@
    t : Int => other + (5  + 2 - true   )  
     thing.that = 3
     strCool: String
-    testFunc = (a: Int, thing: ty {}) {
+    testFunc = (a: Int, thing: ty { x: int y: int }) {
 
       for i = 0, i == 4, i = i + 1 {
         testThing = 123
@@ -31,7 +31,7 @@
        
     } 
     d = () {
-      return ty {
+      return 3 + ty {
         other = 3
         a = (a: Int) -> Void {
           stuff = (Int) -> Void {
@@ -44,6 +44,10 @@
 
   add: (Int, Int) -> Int => (a: Int, b: Int) :: a + b 
   call = callStuff(3, a + 5, "cool", Other.{})
+  fail = () {}
+  otherFail = () -> Void {
+    3 = 4
+  }
 
 Point => ty {
   x: Int

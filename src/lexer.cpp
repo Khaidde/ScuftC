@@ -154,8 +154,8 @@ bool Lexer::from_file_path(const char* filePath) {
     }
 }
 
-std::unique_ptr<Token> Lexer::make_token(TokenType type) {
-    auto tkn = std::make_unique<Token>();
+Token* Lexer::make_token(TokenType type) {
+    Token* tkn = new Token();
     tkn->type = type;
     tkn->beginI = curIndex;
     tkn->endI = curIndex + curCLen;
@@ -165,7 +165,23 @@ std::unique_ptr<Token> Lexer::make_token(TokenType type) {
     return tkn;
 }
 
-std::unique_ptr<Token> Lexer::consume_token() {
+Token* Lexer::peek_token() {
+    if (cacheIndex >= tokenCache.size) tokenCache.push(consume_token());
+    return tokenCache[cacheIndex];
+}
+
+Token* Lexer::next_token() {
+    Token* token = peek_token();
+    if (token->type != TokenType::END) cacheIndex++;
+    return token;
+}
+
+Token* Lexer::last_token() {
+    ASSERT(cacheIndex > 0, "Can't get last token of the first token in the file.");
+    return tokenCache[cacheIndex - 1];
+}
+
+Token* Lexer::consume_token() {
     if (curIndex < sourceStr.length() && sourceStr[curIndex] == '\r') {
         dx.err_loc("\\r is not a supported character in this language", curIndex)->note("Use \\n instead");
         return make_token(TokenType::UNKNOWN);

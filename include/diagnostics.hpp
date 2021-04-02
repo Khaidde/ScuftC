@@ -1,23 +1,9 @@
 #pragma once
 
 #include <chrono>
-#include <memory>
 #include <string>
-#include <vector>
 
-#ifndef NDEBUG
-#define ASSERT(assertion, errMsg)                                                                              \
-    do {                                                                                                       \
-        if (!(assertion))                                                                                      \
-            throw std::runtime_error("--ASSERTION ERROR-- in " + std::string(__FILE__) + "(" +                 \
-                                     std::to_string(__LINE__) + "): \n\t" + __PRETTY_FUNCTION__ + "\n\t    " + \
-                                     std::to_string(__LINE__) + "    " errMsg);                                \
-    } while (false)
-#else
-#define ASSERT(assertion, errMsg) \
-    do {                          \
-    } while (false)
-#endif
+#include "utils.hpp"
 
 static constexpr char TOTAL_DISPLAY_LINES = 3;
 
@@ -71,21 +57,23 @@ struct Token;
 
 class Diagnostics {
     std::chrono::high_resolution_clock::time_point start;
-    std::vector<std::unique_ptr<ErrorMsg>> errors;
+    SList<ErrorMsg*> errors;
     int maxIndex = 0;
 
-    std::vector<std::unique_ptr<ErrorMsg>> discardErrors;
     bool isRecovering = false;  // Discard any errors thrown
 
    public:
     const std::string& src;
 
-    inline Diagnostics(const std::string& src) : src(src) { start = std::chrono::high_resolution_clock::now(); }
+    inline Diagnostics(const std::string& src) : src(src), errors({}) {
+        start = std::chrono::high_resolution_clock::now();
+    }
+    inline ~Diagnostics() { errors.destroy(); }
 
     bool has_errors() { return !errors.empty(); }
 
     ErrorMsg* last_err();
-    inline void pop_last_err() { errors.pop_back(); }
+    inline void pop_last_err() { errors.pop(); }
     inline void set_recover_mode(bool recover) { isRecovering = recover; };
 
     ErrorMsg* err_loc(std::string&& msg, int beginI, int endI);

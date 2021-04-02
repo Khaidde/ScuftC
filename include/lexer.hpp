@@ -1,11 +1,10 @@
 #pragma once
 
-#include <memory>
 #include <stdexcept>
 #include <string>
-#include <vector>
 
 #include "diagnostics.hpp"
+#include "utils.hpp"
 
 enum class TokenType : unsigned char {
     UNKNOWN,
@@ -118,35 +117,26 @@ class Lexer {
     int curCLen = 1;
 
     int cacheIndex = 0;
-    std::vector<std::unique_ptr<Token>> tokenCache;
+    SList<Token*> tokenCache;
 
    public:
     static constexpr size_t TAB_WIDTH = 4;
 
     Diagnostics dx;
-    inline Lexer() : dx(sourceStr) {}
+    Lexer() : dx(sourceStr), tokenCache({}) {}
+    ~Lexer() { tokenCache.destroy(); }
 
     std::string sourceStr;
     bool from_file_path(const char* filePath);
 
-    std::unique_ptr<Token> make_token(TokenType type);
-    std::unique_ptr<Token> consume_token();
+    Token* make_token(TokenType type);
+    Token* consume_token();
 
-    inline Token* peek_token() {
-        if (cacheIndex >= tokenCache.size()) tokenCache.push_back(consume_token());
-        return tokenCache[cacheIndex].get();
-    }
+    Token* peek_token();
 
-    inline Token* next_token() {
-        Token* token = peek_token();
-        if (token->type != TokenType::END) cacheIndex++;
-        return token;
-    }
+    Token* next_token();
 
-    inline Token* last_token() {
-        ASSERT(cacheIndex > 0, "Can't get last token of the first token in the file.");
-        return tokenCache.at(cacheIndex - 1).get();
-    }
+    Token* last_token();
 
     inline bool is_cursor_char(char assertChar) { return sourceStr[curIndex + curCLen] == assertChar; }
 

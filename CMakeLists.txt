@@ -6,9 +6,17 @@ project(
   VERSION 1.0
   LANGUAGES CXX)
 
-# set(CLANG_COMPILE_FLAGS "-fsanitize=null")
-# set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} ${CLANG_COMPILE_FLAGS}")  
-
 include_directories(${PROJECT_SOURCE_DIR}/include)
-aux_source_directory(src SOURCES)
+set(SOURCES
+    src/analysis.cpp
+    src/ast_printer.cpp
+    src/diagnostics.cpp
+    src/lexer.cpp
+    src/main.cpp
+    src/parser.cpp
+    src/sym_tab.cpp
+)
 add_executable(scft ${SOURCES})
+
+# include_directories(${PROJECT_SOURCE_DIR}/include)
+# add_executable(scft include/utest.cpp)

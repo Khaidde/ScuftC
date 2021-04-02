@@ -1,11 +1,9 @@
 #pragma once
 
-#include <memory>
 #include <string>
-#include <vector>
 
 #include "lexer.hpp"
-#include "sym_tab.hpp"
+#include "utils.hpp"
 
 enum class NodeType : unsigned char {
     UNKNOWN,
@@ -62,41 +60,37 @@ struct ASTDeref;
 struct ASTBinOp;
 
 struct ASTProgram {
-    // ASTNode* declarations{nullptr};
-    // int size = 0;
-    // int capacity = 0;
-    std::vector<std::unique_ptr<ASTNode>> declarations;
+    SList<ASTNode*> declarations;
 };
 
 struct ASTBlock {
-    std::unique_ptr<SymTable> symbolTable;
-    std::vector<std::unique_ptr<ASTNode>> statements;  // A statement can be anything excluding ASTProgram
+    SList<ASTNode*> statements;  // A statement can be anything excluding ASTProgram
 };
 
 struct ASTIf {
-    std::unique_ptr<ASTNode> condition;
-    std::unique_ptr<ASTNode> conseq;  // Consequence
-    std::unique_ptr<ASTNode> alt;     // Alternative can be either an if statement or else block
+    ASTNode* condition;
+    ASTNode* conseq;  // Consequence
+    ASTNode* alt;     // Alternative can be either an if statement or else block
 };
 
 struct ASTFor {
-    std::unique_ptr<ASTNode> initial;
-    std::unique_ptr<ASTNode> condition;
-    std::unique_ptr<ASTNode> post;
+    ASTNode* initial;
+    ASTNode* condition;
+    ASTNode* post;
 
-    std::unique_ptr<ASTNode> blockStmt;
+    ASTNode* blockStmt;
 };
 
 struct ASTRet {
-    std::unique_ptr<ASTNode> retExpr;
+    ASTNode* retExpr;
 };
 
 struct ASTDecl {
-    std::unique_ptr<ASTNode> lvalue;
-    std::unique_ptr<ASTNode> type;
+    ASTNode* lvalue;
+    ASTNode* type;
 
     Token* assignType;
-    std::unique_ptr<ASTNode> rvalue;
+    ASTNode* rvalue;
 };
 
 struct ASTTypeLit {
@@ -104,26 +98,26 @@ struct ASTTypeLit {
 };
 
 struct ASTFuncType {
-    std::vector<std::unique_ptr<ASTNode>> inTypes;
-    std::unique_ptr<ASTNode> outType;
+    SList<ASTNode*> inTypes;
+    ASTNode* outType;
 };
 
 struct ASTMod {
-    std::vector<std::unique_ptr<ASTNode>> declarations;
+    SList<ASTNode*> declarations;
 };
 
 struct ASTTy {
-    std::vector<std::unique_ptr<ASTNode>> declarations;
+    SList<ASTNode*> declarations;
 };
 
 struct ASTFunc {
-    std::vector<std::unique_ptr<ASTNode>> parameters;
-    std::unique_ptr<ASTNode> returnType;
+    SList<ASTNode*> parameters;
+    ASTNode* returnType;
 
     bool isShorthand;
     union {
-        std::unique_ptr<ASTNode> block;
-        std::unique_ptr<ASTNode> expr;
+        ASTNode* block;
+        ASTNode* expr;
     };
 };
 
@@ -132,18 +126,18 @@ struct ASTName {
 };
 
 struct ASTDotOp {
-    std::unique_ptr<ASTNode> base;
-    std::unique_ptr<ASTNode> member;  // Always an ASTName
+    ASTNode* base;
+    ASTNode* member;  // Always an ASTName
 };
 
 struct ASTCall {
-    std::unique_ptr<ASTNode> callRef;
-    std::vector<std::unique_ptr<ASTNode>> arguments;
+    ASTNode* callRef;
+    SList<ASTNode*> arguments;
 };
 
 struct ASTTypeInit {
-    std::unique_ptr<ASTNode> typeRef;
-    std::vector<std::unique_ptr<ASTNode>> assignments;
+    ASTNode* typeRef;
+    SList<ASTNode*> assignments;
 };
 
 struct ASTLit {
@@ -152,17 +146,17 @@ struct ASTLit {
 
 struct ASTUnOp {
     Token* op;
-    std::unique_ptr<ASTNode> inner;
+    ASTNode* inner;
 };
 
 struct ASTDeref {
-    std::unique_ptr<ASTNode> inner;
+    ASTNode* inner;
 };
 
 struct ASTBinOp {
-    std::unique_ptr<ASTNode> left;
+    ASTNode* left;
     Token* op;
-    std::unique_ptr<ASTNode> right;
+    ASTNode* right;
 };
 
 struct ASTNode {
@@ -195,24 +189,24 @@ struct ASTNode {
 
 inline bool is_expression_type(NodeType nodeType) { return nodeType >= NodeType::TYPE_LIT; }
 
-inline std::unique_ptr<ASTNode> unknown_node(int beginI, int endI) {
-    auto unknown = std::make_unique<ASTNode>();
+inline ASTNode* unknown_node(int beginI, int endI) {
+    ASTNode* unknown = new ASTNode();
     unknown->nodeType = NodeType::UNKNOWN;
     unknown->beginI = beginI;
     unknown->endI = endI;
     return unknown;
 }
 
-inline std::unique_ptr<ASTNode> make_node(NodeType nodeType, const Token* tkn) {
-    auto node = std::make_unique<ASTNode>();
+inline ASTNode* make_node(NodeType nodeType, const Token* tkn) {
+    ASTNode* node = new ASTNode();
     node->nodeType = nodeType;
     node->beginI = tkn->beginI;
     node->endI = tkn->endI;
     return node;
 }
 
-inline std::unique_ptr<ASTNode> make_node(NodeType nodeType, const std::unique_ptr<ASTNode>& nodeLoc) {
-    auto node = std::make_unique<ASTNode>();
+inline ASTNode* make_node(NodeType nodeType, const ASTNode* nodeLoc) {
+    ASTNode* node = new ASTNode();
     node->nodeType = nodeType;
     node->beginI = nodeLoc->beginI;
     node->endI = nodeLoc->endI;

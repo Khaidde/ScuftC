@@ -95,9 +95,10 @@ class Analyzer {
     void flatten_expr(ASTNode* exprNode);
 
    public:
-    std::vector<IRInstruct> lineInstrs;
+    SList<IRInstruct> lineInstrs;
 
-    explicit inline Analyzer(Diagnostics& dx) : dx(dx) {}
+    explicit inline Analyzer(Diagnostics& dx) : dx(dx), lineInstrs({}) {}
+    inline ~Analyzer() { lineInstrs.destroy(); }
     void analyze(ASTNode* prgmNode);
 
     void ir_print();
